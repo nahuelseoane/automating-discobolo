@@ -18,13 +18,6 @@ pdf_folder = "${BASE_PATH}/${YEAR}/2 Febrero ${YEAR}"
 file_path = "/home/jotaene/PROYECTOS/AutoDiscoEmails/recipients.xlsx"
 df = pd.read_excel(file_path)
 
-# List of recipients and corresponding PDF files
-# recipients = [
-#     {'name': 'Nahuel', 'email': 'nahuelseoane@gmail.com',
-#         'pdf': '/home/jotaene/PROYECTOS/AutoDiscoEmails/pdfs/Cristina Lazarte 4-2-25.pdf'},
-
-# ]
-
 
 # Function to send email
 def send_email(name, recipient_email, pdf_path):
