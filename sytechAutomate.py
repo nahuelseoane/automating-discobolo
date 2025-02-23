@@ -32,6 +32,10 @@ def download_pdf(client_name, pdf_url):
 
             # Download the PDF using requests
             response = requests.get(pdf_url, stream=True)
+            if requests.status_code == 200:
+                with open(pdf_path, "wb") as file:
+                    for chunk in response.iter_content(1204):
+                        file.write(chunk)
     except Exception as e:
         print(f"❌ Error downloading receipt: {str(e)}")
 
@@ -228,7 +232,7 @@ for index, row in df.iterrows():
         try:
             # Detect if a new tab is open
             original_window = driver.current_window_handle
-            WebDriverWait(driver, 10).until(
+            WebDriverWait(driver, 5).until(
                 lambda d: len(d.window_handles) > 1)
             new_window = [
                 w for w in driver.window_handles if w != original_window][0]
@@ -260,27 +264,23 @@ for index, row in df.iterrows():
                 print("✅ Executed JavaScript SaveAs command.")
 
             except Exception as e:
-                print(f"❌ Error triggering Save As: {str(e)}")
-                driver.execute_script(
-                    "document.execCommand('SaveAs', true, 'receipt.pdf');")
-                print("✅ Executed JavaScript SaveAs command.")
+                print(f"❌ Error saving file: {str(e)}")
 
-            # Confirm chrome extension
-            if pdf_url.startswith("chrome-extension://"):
-                print(
-                    "Chrome's built-in PDF viewer detected! Using shortcut to download.")
+            files = sorted(os.listdir(download_root), key=lambda f: os.path.getctime(
+                os.path.join(download_root, f)), reverse=True)
+            if files:
+                latest_file = files[0]
+                original_path = os.path.join(download_root, latest_file)
 
-                # Simulate Save (ctrl + s) and press enter to download
-                time.sleep(2)
-                driver.find_element(By.TAG_NAME, "body").send_keys(
-                    Keys.CONTROL, "s")
-                time.sleep(1)
-                driver.find_element(By.TAG_NAME, "body").send_keys(Keys.RETURN)
+                client_name = row["User"]
+                sanitized_name = sanitize_filename(client_name)
+                new_filename = f"{sanitized_name}.pdf"
+                new_path = os.path.join(download_root, new_filename)
 
-                print("✅ Triggered PDF download using Chrome shortcut.")
-                time.sleep(3)
+                os.rename(original_path, new_path)
+                print(f"✅ Renamed file: {latest_file} -> {new_filename}")
             else:
-                print("❌ No valid PDF detected in URL.")
+                print("❌ No files found in the download folder.")
 
             # Close receipt window
             driver.switch_to.default_content()
