@@ -13,6 +13,7 @@ EMAIL_PASSWORD = '${EMAIL_PASSWORD}'  # your email password
 
 # Define PDF storage folder
 pdf_folder = "${BASE_PATH}/${YEAR}/2 Febrero ${YEAR}"
+# "G:\.shortcut-targets-by-id\1I8UOrub2whpF3WMcosxM7LPlOgJo6CYk\TRANSFERENCIAS\${YEAR}\2 Febrero ${YEAR}"
 
 # Load Excel file
 file_path = "/home/jotaene/PROYECTOS/AutoDiscoEmails/recipients.xlsx"
