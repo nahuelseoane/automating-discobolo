@@ -16,8 +16,9 @@ pdf_folder = "${BASE_PATH}/${YEAR}/2 Febrero ${YEAR}"
 # "G:\.shortcut-targets-by-id\1I8UOrub2whpF3WMcosxM7LPlOgJo6CYk\TRANSFERENCIAS\${YEAR}\2 Febrero ${YEAR}"
 
 # Load Excel file
-file_path = "/home/jotaene/PROYECTOS/AutoDiscoEmails/recipients.xlsx"
-df = pd.read_excel(file_path)
+# excel_file = "/home/jotaene/PROYECTOS/AutoDiscoEmails/recipients.xlsx"
+excel_file = "${BASE_PATH}/${YEAR}/Transferencias ${YEAR}.xlsx"
+df = pd.read_excel(excel_file)
 
 
 # Function to send email
@@ -27,7 +28,7 @@ def send_email(name, recipient_email, pdf_path):
         return False  # Return False if email was not sent
 
     msg = MIMEMultipart()
-    msg['From'], msg['To'], msg['Subject'] = EMAIL_USER, recipient_email, 'Recibo de pago por transferencia'
+    msg['From'], msg['To'], msg['Subject'] = EMAIL_USER, recipient_email, 'Recibo de pago - Transferencia confirmada'
 
     # Email body text
     body = f'Buenas tardes {name}:\n\nRecibimos su transferencia.\nAdjuntamos el recibo correspondiente.\n\nSaludos!'
@@ -62,5 +63,5 @@ for index, row in df.iterrows():
         df.at[index, "Sent"] = "Yes"  # Mark email as sent in DataFrame
 
 # Save updated Excel file
-df.to_excel(file_path, index=False)
+df.to_excel(excel_file, index=False)
 print("🎉Emails sent successfully!")

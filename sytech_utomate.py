@@ -4,7 +4,7 @@ import re
 import time
 import pandas as pd
 import traceback
-from filter_payments import update_loaded_status, load_and_filter_payments, extract_operation_number
+from filter_payments import update_loaded_status, load_and_filter_payments, extract_operation_number, sanitize_filename
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -12,33 +12,6 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
-
-# Functions
-
-
-def sanitize_filename(name):
-    """Remove invalid characters for filename."""
-    return re.sub(r'[\/:*?"<>|,]', '', name)
-
-
-def download_pdf(client_name, pdf_url):
-    """Download the receipt's PDF with the client's name."""
-    try:
-        if pdf_url and pdf_url.lower().endswith(".pdf"):
-            sanitized_name = sanitize_filename(client_name)
-
-            pdf_filename = f"{sanitized_name}.pdf"
-            pdf_path = os.path.join(download_root, pdf_filename)
-
-            # Download the PDF using requests
-            response = requests.get(pdf_url, stream=True)
-            if requests.status_code == 200:
-                with open(pdf_path, "wb") as file:
-                    for chunk in response.iter_content(1204):
-                        file.write(chunk)
-    except Exception as e:
-        print(f"❌ Error downloading receipt: {str(e)}")
-
 
 # Load the Excel file with payments
 excel_file = "${BASE_PATH}/${YEAR}/Transferencias ${YEAR}.xlsx"
@@ -51,7 +24,6 @@ df["Fecha"] = pd.to_datetime(df["Fecha"], dayfirst=True)
 df["Fecha"] = df["Fecha"].dt.strftime("%d/%m/%Y")
 
 # Download path
-# download_root1 = "./pdfs/"
 download_root = "${BASE_PATH}/${YEAR}/2 Febrero ${YEAR}"
 
 
@@ -71,6 +43,10 @@ chrome_options.add_experimental_option("prefs", prefs)
 
 # Force Chrome to open new windows in the same tab
 chrome_options.add_argument("--disable-popup-blocking")
+chrome_options.add_argument("--disable-features=InfiniteSessionRestore")
+chrome_options.add_argument("--disable-features=AutoReload,tab-hover-cards")
+chrome_options.add_argument("--force-app-mode")
+chrome_options.add_argument("--disable-site-isolation-trials")
 chrome_options.add_argument("--new-window")
 chrome_options.add_argument("--start-maximized")
 
@@ -81,7 +57,6 @@ driver.execute_cdp_cmd("Page.setDownloadBehavior", {
     "behavior": "allow",
     "downloadPath": download_root  # ✅ Force Chrome to use the right folder
 })
-print(f"✅ Chrome is now set to download files to: {download_root}")
 
 # Open Sytech
 driver.get("${URL_SYTECH_MAIN}")
@@ -99,7 +74,14 @@ username_input.send_keys("${SYTECH_USER}")
 password_input.send_keys("${SYTECH_PASSWORD}")
 login_button.click()
 
+original_window = driver.current_window_handle
 time.sleep(2)
+# Close extra tabs
+for handle in driver.window_handles:
+    if handle != original_window:
+        driver.switch_to.window(handle)
+        driver.close()
+driver.switch_to.window(original_window)
 
 # Step 2: Navigate to the payment entry page
 driver.get("${URL_SYTECH_COBRANZAS}")
@@ -109,15 +91,15 @@ time.sleep(2)
 index_2 = 0
 
 for index, row in df_filtered.iterrows():
-    print(f"index: {index}")
     # Checking if Payment already enter
     user = row['Jefe de Grupo']
     amount = row['Importe']
 
-    # print(f"DEBUG: User: {user}, Cargado Column Value: '{row['Cargado']}'")
-    if str(row['Cargado']).strip().lower() == "yes":
+    # print(f"DEBUG: User: {user}, Sytech Column Value: '{row['Sytech']}'")
+    if str(row['Sytech']).strip().lower() == "yes":
         print(f"🔃 Skipping {user} - Payment already loaded.")
         continue
+    # New Index to control loop
     index_2 += 1
     try:
         print(f"🔎 Searching for client: {user}")
@@ -158,8 +140,6 @@ for index, row in df_filtered.iterrows():
                 try:
                     client_name = row_element.get_attribute("name").strip()
 
-                    # print(f"🔎 Found option: {client_name}")
-
                     # Match full name
                     if user.replace(",", "").lower() == client_name.replace(",", "").lower():
                         # print(f"✅ Found correct client: {client_name}")
@@ -179,8 +159,6 @@ for index, row in df_filtered.iterrows():
                                 "arguments[0].click();", selected_client)
 
                             time.sleep(3)
-                            # print(
-                            #     f"✅ Successfully clicked client: {user}")
                         except Exception as e:
                             print(f"❌ Error selecting {user}: {str(e)}")
 
@@ -210,13 +188,11 @@ for index, row in df_filtered.iterrows():
         payment_method = Select(payment_dropdown)
         payment_option = "Transf/Depositos"
         payment_method.select_by_visible_text(payment_option)
-        print("  Success step 1: Metodo de pago")
         # 2. Cuenta Bancaria
         cuenta_dropdown = Select(driver.find_element(
             By.ID, "p_transf_id_cta_cte"))
         select_cuenta = "BANCO DE LA PROVINCIA DE BUENOS AIRES : 123456"
         cuenta_dropdown.select_by_visible_text(select_cuenta)
-        print("  Success step 2: Cuenta Bancaria")
         # 3. Nro Operacion
         transaction_number = extract_operation_number(row["Descripción"])
         df['Nro Operacion'] = transaction_number
@@ -227,44 +203,33 @@ for index, row in df_filtered.iterrows():
             continue  # Skip if no transaction number is found
         operation_number = driver.find_element(By.ID, "p_transf_nro")
         operation_number.send_keys(transaction_number)
-        print("Success step 3: Nro Operacion")
         # 4. Fecha
         formatted_date = row["Fecha"]
         date_input = driver.find_element(By.ID, "p_transf_fecha_cobro")
         date_input.clear()
         date_input.send_keys(formatted_date)
         time.sleep(1)
-        print("Success step 4: Date")
         # 5. Amount
         amount_input = driver.find_element(By.ID, "p_transf_monto")
         amount_input.send_keys(str(row["Importe"]))
-        print("✅ Success step 5: Amount")
         # 6. Tipo Operacion
         operation_type = Select(
             driver.find_element(By.ID, "p_transf_tipo"))
         operation_type.select_by_visible_text("Transferencia")
-        print("✅ Success step 6: Operation type")
         # 7. "Agregar" button
         agregar_button = driver.find_element(By.ID, "keyAgregarTransf")
         agregar_button.click()
-        print("✅ Success step 7: Agregar Button Clicked")
         # 8. Grabar Cobranza
         grabar_button = driver.find_element(By.ID, "keyGrabar")
         grabar_button.click()
-        time.sleep(10)
-        print("✅ Success Step 8: Clicked 'Grabar' - Waiting for receipt.")
+        time.sleep(8)
 
         # Pop-up Payment Receipt
         try:
             # Detect if a new tab is open
-            original_window = driver.current_window_handle
             WebDriverWait(driver, 5).until(
                 lambda d: len(d.window_handles) > 1)
-            new_window = [
-                w for w in driver.window_handles if w != original_window][0]
 
-            pdf_url = driver.current_url
-            print(f"🔎 Current receipt URL: {pdf_url}")
             try:
                 # ✅ Ensure Chrome has focus
                 driver.execute_script("window.focus();")
@@ -276,7 +241,7 @@ for index, row in df_filtered.iterrows():
 
                 driver.execute_script(
                     "document.execCommand('SaveAs', true, 'receipt.pdf');")
-                print("✅ Executed JavaScript SaveAs command.")
+                # print("✅ Executed JavaScript SaveAs command.")
 
             except Exception as e:
                 print(f"❌ Error saving file: {str(e)}")
@@ -294,20 +259,26 @@ for index, row in df_filtered.iterrows():
                 new_path = os.path.join(download_root, new_filename)
 
                 os.rename(original_path, new_path)
-                print(f"✅ Renamed file: {latest_file} -> {new_filename}")
 
-                # Updating Cargado row
-                # df.at[index, "Cargado"] = "Yes"
-                # row['Cargado'] = "Yes"
-                # df.to_excel(excel_file, index=False)
-                # print("✅ Column Cargado changed to 'Yes'.")
                 update_loaded_status(df, excel_file, sheet_name, user)
             else:
                 print("❌ No files found in the download folder.")
 
             # Close receipt window
-            driver.switch_to.default_content()
-            print("✅ Ready for the next client.")
+            if len(driver.window_handles) > 1:
+                # ✅ The last opened tab is usually the PDF
+                pdf_tab = driver.window_handles[-1]
+                driver.switch_to.window(pdf_tab)  # ✅ Switch to the PDF tab
+                driver.close()  # ✅ Close the PDF viewer
+
+                # ✅ Return to the main Sytech tab
+                driver.switch_to.window(original_window)
+                driver.refresh()
+                time.sleep(1)
+            else:
+                print("⚠️ No extra tab detected for PDF.")
+
+            print(f"  ✅ {user} Payment successfully loaded")
         except Exception as e:
             print(f"❌ Error downloading receipt: {str(e)}")
             print("⚒️ Full error detail:")
@@ -315,8 +286,10 @@ for index, row in df_filtered.iterrows():
 
     except Exception as e:
         print(f"❌ Error processing {user}: {e}")
+        driver.refresh()
+        time.sleep(1)
 
-    if index >= 2:
-        break
+    # if index_2 >= 2:
+    #     break
 
 print("✅ All payments processed successfully!")
