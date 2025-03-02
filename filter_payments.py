@@ -1,6 +1,7 @@
-import pandas as pd
 import re
+import pandas as pd
 from openpyxl import load_workbook
+from openpyxl.styles import PatternFill
 
 
 def load_and_filter_payments(excel_file, sheet_name):
@@ -25,7 +26,11 @@ def sanitize_filename(name):
 
 
 def update_loaded_status(df, excel_file, sheet_name, client_name):
-    "Mark the 'Sytech' column as 'Yes' after a successful payment."
+    """Mark the 'Sytech' column as 'Si' after a successful payment."""
+
+    # Define gray fill style
+    gray_fill = PatternFill(start_color="D3D3D3",
+                            end_color="D3D3D3", fill_type="solid")
     try:
         wb = load_workbook(excel_file)
 
@@ -39,9 +44,10 @@ def update_loaded_status(df, excel_file, sheet_name, client_name):
         for row in ws.iter_rows(min_row=2, max_row=ws.max_row, values_only=False):
             if row[6].value == client_name:  # Assuming is Column G
                 sent_cell = row[7]  # Column H (Sytech)
-
+                importe_cell = row[3]  # Column D (Importe)
+                importe_cell.fill = gray_fill
                 # ✅ Update the cell without affecting formatting
-                sent_cell.value = "Yes"
+                sent_cell.value = "Si"
 
         # ✅ Save the file without overwriting sheets or formatting
         wb.save(excel_file)
@@ -67,3 +73,11 @@ def extract_operation_number(description):
         return numbers[0]
 
     return None
+
+
+def extract_date(description):
+    """Extracts the first occurrence of a date in DD/MM format from any transaction description."""
+    match = re.search(r"(\d{2}/\d{2})",
+                      description)  # Looks for first DD/MM pattern
+    # Return the date if found, else None
+    return match.group(1) + '/${YEAR}' if match else None

@@ -6,7 +6,7 @@ from datetime import datetime
 
 # File paths (update these to match your actual files)
 master_file = "${BASE_PATH}/${YEAR}/Transferencias ${YEAR}.xlsx"
-bank_file = "${BASE_PATH}/${YEAR}/BankDailyMovements.xlsx"
+bank_file = "${BASE_PATH}/${YEAR}/MovimientosBanco.xlsx"
 
 # Backup directory
 backup_dir = "/home/jotaene/PROYECTOS/AutoDiscoEmails/backups/"

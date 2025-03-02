@@ -1,10 +1,8 @@
 import os
-import requests
-import re
 import time
 import pandas as pd
 import traceback
-from filter_payments import update_loaded_status, load_and_filter_payments, extract_operation_number, sanitize_filename
+from filter_payments import update_loaded_status, load_and_filter_payments, extract_operation_number, extract_date, sanitize_filename
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -14,18 +12,18 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 
 # Load the Excel file with payments
+month = 'Marzo'
 excel_file = "${BASE_PATH}/${YEAR}/Transferencias ${YEAR}.xlsx"
-sheet_name = 'Febrero'
+sheet_name = month
 df, df_filtered = load_and_filter_payments(excel_file, sheet_name)
-
 
 # ✅ Convert to the correct format
 df["Fecha"] = pd.to_datetime(df["Fecha"], dayfirst=True)
 df["Fecha"] = df["Fecha"].dt.strftime("%d/%m/%Y")
 
 # Download path
-download_root = "${BASE_PATH}/${YEAR}/2 Febrero ${YEAR}"
-
+download_path = f"${BASE_PATH}/${YEAR}/3 {month} ${YEAR}"
+download_root = download_path
 
 # Configure Chrome to autodefine folder
 chrome_options = webdriver.ChromeOptions()
@@ -96,7 +94,7 @@ for index, row in df_filtered.iterrows():
     amount = row['Importe']
 
     # print(f"DEBUG: User: {user}, Sytech Column Value: '{row['Sytech']}'")
-    if str(row['Sytech']).strip().lower() == "yes":
+    if str(row['Sytech']).strip().lower() == "si":
         print(f"🔃 Skipping {user} - Payment already loaded.")
         continue
     # New Index to control loop
@@ -179,6 +177,17 @@ for index, row in df_filtered.iterrows():
         cobranza_button = driver.find_element(By.ID, "keyComandoCobranza")
         cobranza_button.click()
 
+        # 1. Fecha imputada
+        fecha_extraida = extract_date(row['Descripción'])
+        fecha_imputacion = driver.find_element(By.ID, "p_fecha_imputacion")
+        fecha_imputacion.clear()
+        fecha_imputacion.send_keys(fecha_extraida)
+
+        # # 2. Observaciones
+        # if row['Concepto'] != 'Cuota':
+
+        #     observaciones = Select(driver.find_element(By.ID, "p_observaciones"))
+        #     observaciones.send_keys(row['Jefe de Grupo'])
         # 1. Tipo
         tipo_dropdown = Select(
             driver.find_element(By.ID, "p_operacion_tipo"))
@@ -195,7 +204,7 @@ for index, row in df_filtered.iterrows():
         cuenta_dropdown.select_by_visible_text(select_cuenta)
         # 3. Nro Operacion
         transaction_number = extract_operation_number(row["Descripción"])
-        df['Nro Operacion'] = transaction_number
+        # df['Nro Operacion'] = transaction_number
 
         if not transaction_number:
             print(
@@ -250,17 +259,20 @@ for index, row in df_filtered.iterrows():
             files = sorted(os.listdir(download_root), key=lambda f: os.path.getctime(
                 os.path.join(download_root, f)), reverse=True)
             if files:
-                latest_file = files[0]
-                original_path = os.path.join(download_root, latest_file)
+                try:
+                    latest_file = files[0]
+                    original_path = os.path.join(download_root, latest_file)
 
-                client_name = user
-                sanitized_name = sanitize_filename(client_name)
-                new_filename = f"{sanitized_name}.pdf"
-                new_path = os.path.join(download_root, new_filename)
+                    client_name = user
+                    sanitized_name = sanitize_filename(client_name)
+                    new_filename = f"{sanitized_name}_{transaction_number}.pdf"
+                    new_path = os.path.join(download_root, new_filename)
 
-                os.rename(original_path, new_path)
+                    os.rename(original_path, new_path)
 
-                update_loaded_status(df, excel_file, sheet_name, user)
+                    update_loaded_status(df, excel_file, sheet_name, user)
+                except Exception as e:
+                    print(f"❌ Problem while changing file name: {e}")
             else:
                 print("❌ No files found in the download folder.")
 
