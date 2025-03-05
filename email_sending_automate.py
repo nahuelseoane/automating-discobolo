@@ -17,10 +17,9 @@ EMAIL_PASSWORD = '${EMAIL_PASSWORD}'  # your email password
 main_file = "${BASE_PATH}/${YEAR}/Transferencias ${YEAR}.xlsx"
 month = 'Marzo'
 sheet_name = month
-emails_file = "${BASE_PATH}/${YEAR}/EmailsFile.xlsx"
+emails_file = "${BASE_PATH}/${YEAR}/EmailSocios.xlsx"
 payments_path = f"${BASE_PATH}/${YEAR}/3 {month} ${YEAR}"
 payments_folder = payments_path
-
 
 # Load Excel files
 df_main = pd.read_excel(main_file, sheet_name=sheet_name)

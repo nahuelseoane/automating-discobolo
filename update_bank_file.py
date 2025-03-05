@@ -21,10 +21,6 @@ print(f"✅ Backup created: {backup_file}")
 # Get current month index (1 = January, 2 = February, ...)
 current_month_number = datetime.now().month
 
-# Load the master file and select the correct month's sheet
-# xls_master = pd.ExcelFile(master_file)
-# sheet_names = xls_master.sheet_names
-
 month_names = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
                "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
 current_month_sheet = month_names[current_month_number - 1]
@@ -37,8 +33,6 @@ print(f"📌 Bank file columns detected: {df_bank.columns.tolist()}")
 
 # Delete "descripción" column (duplicate one)
 df_bank = df_bank.drop(columns=["Descripción"])
-# df_bank = df_bank.drop(columns=["Nombre Comercio"])
-
 
 # ✅ Fix column names for consistency
 df_bank.columns = df_bank.columns.str.strip()

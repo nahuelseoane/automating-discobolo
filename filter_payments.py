@@ -81,3 +81,11 @@ def extract_date(description):
                       description)  # Looks for first DD/MM pattern
     # Return the date if found, else None
     return match.group(1) + '/${YEAR}' if match else None
+
+
+def extract_dni(description):
+    """Given a DNI number it extracts the name from User's Data file."""
+    match = re.search(
+        r'[CD]\:(\d+)', description)  # Looks for first DD/MM pattern
+    # Return the date if found, else None
+    return match.group(1)[2:10] if match else None
