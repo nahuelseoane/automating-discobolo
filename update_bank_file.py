@@ -1,22 +1,10 @@
 import pandas as pd
-import os
-import shutil
 from openpyxl import load_workbook
 from datetime import datetime
 
-# File paths (update these to match your actual files)
+# File paths
 master_file = "${BASE_PATH}/${YEAR}/Transferencias ${YEAR}.xlsx"
 bank_file = "${BASE_PATH}/${YEAR}/MovimientosBanco.xlsx"
-
-# Backup directory
-backup_dir = "/home/jotaene/PROYECTOS/AutoDiscoEmails/backups/"
-os.makedirs(backup_dir, exist_ok=True)  # Ensure backup directory exists
-
-# Backup the master file before modifying
-backup_file = os.path.join(
-    backup_dir, f"master_backup_{datetime.now().strftime('%Y-%m-%d')}.xlsx")
-shutil.copy(master_file, backup_file)
-print(f"✅ Backup created: {backup_file}")
 
 # Get current month index (1 = January, 2 = February, ...)
 current_month_number = datetime.now().month

@@ -69,7 +69,7 @@ def send_email(user, recipient_email, pdf_path):
         server.send_message(msg)
 
     print(
-        f'   ✅ Email successfully sent to {user} (First Name: {first_name}) (Email: {recipient_email}) ✅')
+        f'  ✅ Email successfully sent to {user} (First Name: {first_name}) (Email: {recipient_email})')
     return True  # Return True if email was successfully sent
 
 
@@ -81,9 +81,11 @@ ws_main = wb_main[sheet_name]
 
 # Loop through each recipient and send the email
 for index, row in df_merged.iterrows():
-    # index_2 += 1
-    transaction_number = extract_operation_number(row["Descripción"])
     user, email = row['Jefe de Grupo'], row['Emails']
+    if pd.isna(row['Sytech']):  # Correct way to check for NaN
+        print(f" ❌ Payment not yet uploaded - {user}")
+        continue
+    transaction_number = extract_operation_number(row["Descripción"])
     email = str(email) if isinstance(email, str) else ""
     email = email.split(";")[0].strip()
     if str(row['Email']).strip().lower() == "si":  # Skip emails already sent

@@ -20,12 +20,23 @@ def load_and_filter_payments(excel_file, sheet_name):
         print(f"❌ Error loading Excel file: {e}")
 
 
+def filter_positive_payments(excel_file, sheet_name):
+    """Load excel file and filter only positive payments."""
+    try:
+        df = pd.read_excel(excel_file, sheet_name=sheet_name)
+        df_filtered = df[df['Importe'] > 0].copy()
+        print(f"✅ Loadad {len(df_filtered)} payments from {sheet_name}.")
+        return df, df_filtered
+    except Exception as e:
+        print(f"❌ Error loading Excel file: {e}")
+
+
 def sanitize_filename(name):
     """Remove invalid characters for filename."""
     return re.sub(r'[\/:*?"<>|,]', '', name)
 
 
-def update_loaded_status(df, excel_file, sheet_name, client_name):
+def update_loaded_status(excel_file, sheet_name, seq):
     """Mark the 'Sytech' column as 'Si' after a successful payment."""
 
     # Define gray fill style
@@ -42,7 +53,7 @@ def update_loaded_status(df, excel_file, sheet_name, client_name):
 
         # ✅ Find the correct row for the client
         for row in ws.iter_rows(min_row=2, max_row=ws.max_row, values_only=False):
-            if row[6].value == client_name:  # Assuming is Column G
+            if row[0].value == seq:  # Assuming is Column G
                 sent_cell = row[7]  # Column H (Sytech)
                 importe_cell = row[3]  # Column D (Importe)
                 importe_cell.fill = gray_fill
@@ -61,18 +72,21 @@ def extract_operation_number(description):
     if not description:
         return None
 
-    description = str(description)
+    try:
+        description = str(description)
 
-    match = re.search(r'[CS]\.(\d+)', description)
+        match = re.search(r'[CS]\.(\d+)', description)
 
-    if match:
-        return match.group(1)  # ✅ Extracted number or None
+        if match:
+            return match.group(1)  # ✅ Extracted number or None
 
-    numbers = re.findall(r"\d+", description)
-    if numbers:
-        return numbers[0]
+        numbers = re.findall(r"\d+", description)
+        if numbers:
+            return numbers[0]
 
-    return None
+        return None
+    except Exception as e:
+        print(f"❌ Error extracting operation number: {e}")
 
 
 def extract_date(description):
@@ -84,8 +98,23 @@ def extract_date(description):
 
 
 def extract_dni(description):
-    """Given a DNI number it extracts the name from User's Data file."""
-    match = re.search(
-        r'[CD]\:(\d+)', description)  # Looks for first DD/MM pattern
-    # Return the date if found, else None
-    return match.group(1)[2:10] if match else None
+    """Extracts DNI from the given description.
+
+    1. First, tries to find a pattern like 'C:12345678' or 'D:12345678'.
+    2. If not found, searches for an 11-digit number that has nothing before or after.
+    3. Converts the found number to an 8-digit DNI by removing the first two digits and the last digit.
+    4. If no number was found, try searching for ORI:.
+    """
+    match = re.search(r'[CD]\:(\d+)', description)  # First pattern
+    if match:
+        return int(match.group(1)[2:10])  # Extract 8-digit DNI
+    # Search for an 11-digit number with word boundaries (no letters or numbers before/after)
+    match_2 = re.search(r'\b(\d{11})\b', description)
+    if match_2:
+        return int(match_2.group(1)[2:10])  # Extract 8-digit DNI
+    match_3 = re.search(r'ORI:([0-9\-]+)', description)
+    if match_3:
+        print(f"ORI: number was found -> {match_3.group(1)}")
+        return match_3.group(1)
+
+    return None  # If no match found
