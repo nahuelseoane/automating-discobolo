@@ -114,7 +114,6 @@ def extract_dni(description):
         return int(match_2.group(1)[2:10])  # Extract 8-digit DNI
     match_3 = re.search(r'ORI:([0-9\-]+)', description)
     if match_3:
-        print(f"ORI: number was found -> {match_3.group(1)}")
         return match_3.group(1)
 
     return None  # If no match found

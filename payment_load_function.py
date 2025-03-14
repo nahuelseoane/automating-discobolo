@@ -218,6 +218,8 @@ def payment_load(df, driver, download_root, excel_file, sheet_name):
                         client_name = user
                         sanitized_name = sanitize_filename(client_name)
                         new_filename = f"{sanitized_name}_{transaction_number}.pdf"
+                        if observations:
+                            new_filename = f"{observations}_{transaction_number}.pdf"
                         new_path = os.path.join(download_root, new_filename)
 
                         os.rename(original_path, new_path)

@@ -33,14 +33,21 @@ for idx, row in df_merged.iterrows():
             sent_cell = row[6]  # Column H (Jefe de Grupo)
             if sent_cell.value is None or sent_cell.value == "":
                 sent_cell.value = full_name  # ✅ Update the cell without affecting formatting
-                print(f"✅ Jefe de Grupo updated: {seq} - {full_name}.")
+                print(f" ✅ {seq} Jefe de Grupo updated: {full_name}.")
                 if row[5].value is None or sent_cell.value == "":  # Column 'Concept'
                     if not pd.isna(full_name):
-                        if full_name == 'CANFORA, KEVIN' and int(amount) < 20000:
+                        if full_name == 'CANFORA, KEVIN' and int(amount) <= 20000:
                             row[5].value = 'TENIS'
+                            row[6].value = 'CLASES KEVIN'
+                            print(f" ✅ {seq} updated: TENIS - CLASES KEVIN")
                             continue
                         row[5].value = 'CUOTA'
-                        print(f"✅ Concept updated to 'CUOTA' - {seq}")
+                        print(f" ✅ Concept updated to 'CUOTA' - {seq}")
+                    if int(amount) == 5500:
+                        row[5].value = 'TENIS'
+                        row[6].value = 'CLASE NO SOCIO'
+                        print(f" ✅ {seq} updated: TENIS - CLASE NO SOCIO")
+                        continue
 
 
 # Save the workbook as a new file

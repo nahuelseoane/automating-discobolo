@@ -1,22 +1,21 @@
 import os
 import time
-import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 
 r10240 = '${R10240}'
-download_root = "${BASE_PATH}/Morosos"
+download_path = "${BASE_PATH}/Morosos/descarga_reporte"
 
 chrome_options = webdriver.ChromeOptions()
 prefs = {
-    "download.default_directory": download_root,
+    "download.default_directory": download_path,
 }
 chrome_options.add_experimental_option("prefs", prefs)
 chrome_options.add_argument("--start-maximized")
 driver = webdriver.Chrome(options=chrome_options)
 driver.execute_cdp_cmd("Page.setDownloadBehavior", {
     "behavior": "allow",
-    "downloadPath": download_root  # ✅ Force Chrome to use the right folder
+    "downloadPath": download_path  # ✅ Force Chrome to use the right folder
 })
 
 # Open Sytech
@@ -46,61 +45,47 @@ pantalla_button = driver.find_element(By.ID, 'key_xlsx')
 pantalla_button.click()
 time.sleep(2)
 
-# try:
-#     # ✅ Ensure Chrome has focus
-#     driver.execute_script("window.focus();")
+downloaded = False
+timeout = 30
+start_time = time.time()
 
-#     # ✅ Find the <body> element and click it to focus
-#     body_element = driver.find_element(By.TAG_NAME, "body")
-#     body_element.click()
-#     time.sleep(5)  # Wait for focus
+while not downloaded and time.time() - start_time < timeout:
+    files = os.listdir(download_path)
+    downloading = [f for f in files if f.endswith('.crdownload')]
+    if not downloading and any(f.endswith('.xlsx') for f in files):
+        downloaded = True
+    else:
+        time.sleep(2)
 
-#     driver.execute_script(
-#         "document.execCommand('SaveAs', true, 'receipt.pdf');")
+if downloaded:
+    print("✅ Download finished... Starting renaming.")
 
-# except Exception as e:
-#     print(f"❌ Error saving file: {str(e)}")
+    found_file = None
+    wait_seconds = 10  # ⏱ wait max 10 more seconds after 'downloaded' was marked True
+    wait_start = time.time()
 
-# Renaming file
+    while not found_file and time.time() - wait_start < wait_seconds:
+        for f in os.listdir(download_path):
+            if f == "rockhopper_R10240.xlsx":
+                found_file = f
+                break
+        if not found_file:
+            time.sleep(1)
 
+    if found_file:
 
-# def wait_for_download(directory, timeout=30):
-#     """Waits until a file finishes downloading (no .crdownload exists)."""
-#     start_time = time.time()
-#     while True:
-#         files = os.listdir(directory)
-#         crdownload_files = [f for f in files if f.endswith(".crdownload")]
+        old_path = os.path.join(download_path, f)
+        new_path = os.path.join(download_path, "reporte_morosos.xlsx")
 
-#         if not crdownload_files:  # ✅ No .crdownload means it's done
-#             print("Download completed!")
-#             break
+        if os.path.exists(new_path):
+            os.remove(new_path)
 
-#         if time.time() - start_time > timeout:  # ⏳ Timeout after 30 sec
-#             print("Download timed out!")
-#             break
-
-#         time.sleep(1)  # Wait a bit and check again
-
-
-# # Call this after clicking the download button
-# wait_for_download(download_root)
-
-
-files = sorted(os.listdir(download_root), key=lambda f: os.path.getctime(
-    os.path.join(download_root, f)), reverse=True)
-if files:
-    try:
-        latest_file = files[0]
-        original_path = os.path.join(download_root, latest_file)
-        new_filename = "morososDiario.xlsx"
-        new_path = os.path.join(download_root, new_filename)
-
-        os.rename(original_path, new_path)
-    except Exception as e:
-        print(f"❌ Problem while changing file name: {e}")
+        os.rename(old_path, new_path)
+        print(f"✅ Renamed file to: {new_path}")
+    else:
+        print("⚠️ Downloaded file not found for renaming.")
 else:
-    print("❌ No files found in the download folder.")
-
+    print("❌ Timeout - Download may have failed.")
 
 driver.quit()  # ✅ Fully closes Chrome
 print("✅ Chrome closed. Moving to the next task...")

@@ -7,8 +7,8 @@ from payment_load_function import payment_load
 
 # Load the Excel file with payments
 month = 'Marzo'
-transfer_file = "${BASE_PATH}/${YEAR}/Transferencias ${YEAR}.xlsx"
 sheet_name = month
+transfer_file = "${BASE_PATH}/${YEAR}/Transferencias ${YEAR}.xlsx"
 df, df_filtered = load_and_filter_payments(transfer_file, sheet_name)
 df, df_transfer = filter_positive_payments(transfer_file, sheet_name)
 
@@ -72,7 +72,5 @@ login_button.click()
 payment_load(df_transfer, driver, download_root, transfer_file, sheet_name)
 
 print("✅ All payments processed successfully!")
-
-# All payments different from "Cuota"
 
 driver.quit()

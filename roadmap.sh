@@ -61,13 +61,20 @@ read -r user_input
 
 if [ "$user_input" = "y" ] || [ "$user_input" = "Y" ]; then
     echo "🔹 Creating Morosos file."
-    python3 morosos_daily_download.py
+    python3 morosos_download.py
 
     if [ $? -ne 0 ]; then
         echo "❌ Error running morosos_daily_download.py"
         exit 1
     fi
-    echo "  ✅ Morosos file successfully created."
+    echo "  ✅ Morosos report successfully downloaded."
+    python3 morosos_update.py
+
+    if [ $? -ne 0 ]; then
+        echo "❌ Error running morosos_update.py"
+        exit 1
+    fi
+    echo "  ✅ Morosos main file updated."
 else
     echo " ❌ Morosos file creation skipped."
 fi

@@ -5,7 +5,7 @@ from openpyxl.styles import Font, PatternFill
 from openpyxl.utils import get_column_letter
 
 
-morosos_daily = "${BASE_PATH}/Morosos/descarga_reporte/rockhopper_R10240.xlsx"
+morosos_daily = "${BASE_PATH}/Morosos/descarga_reporte/reporte_morosos.xlsx"
 morosos_main = "${BASE_PATH}/Morosos/Morosos ${YEAR}.xlsx"
 
 months_es = {
