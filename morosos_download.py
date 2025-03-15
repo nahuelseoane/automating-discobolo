@@ -58,8 +58,6 @@ while not downloaded and time.time() - start_time < timeout:
         time.sleep(2)
 
 if downloaded:
-    print("✅ Download finished... Starting renaming.")
-
     found_file = None
     wait_seconds = 10  # ⏱ wait max 10 more seconds after 'downloaded' was marked True
     wait_start = time.time()
@@ -81,12 +79,10 @@ if downloaded:
             os.remove(new_path)
 
         os.rename(old_path, new_path)
-        print(f"✅ Renamed file to: {new_path}")
     else:
         print("⚠️ Downloaded file not found for renaming.")
 else:
     print("❌ Timeout - Download may have failed.")
 
 driver.quit()  # ✅ Fully closes Chrome
-print("✅ Chrome closed. Moving to the next task...")
 time.sleep(1)

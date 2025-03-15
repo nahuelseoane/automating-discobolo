@@ -1,9 +1,9 @@
 # Checking if the file is accesible
 FILE_PATH="${BASE_PATH}/${YEAR}/Transferencias ${YEAR}.xlsx"
 
-echo " Checkgin if the file is accesible..."
+echo "  Checking if the file is accesible..."
 if ls -lh "$FILE_PATH" >/dev/null 2>&1; then
-    echo "✅ File is accessible."
+    echo "   ✅ File is accessible."
 else
     echo "❌ File not found... remounting drive:"
 

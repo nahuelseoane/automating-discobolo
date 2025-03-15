@@ -3,7 +3,7 @@ from openpyxl import load_workbook
 from datetime import datetime
 
 # File paths
-master_file = "${BASE_PATH}/${YEAR}/Transferencias ${YEAR}.xlsx"
+transfer_file = "${BASE_PATH}/${YEAR}/Transferencias ${YEAR}.xlsx"
 bank_file = "${BASE_PATH}/${YEAR}/MovimientosBanco.xlsx"
 
 # Get current month index (1 = January, 2 = February, ...)
@@ -16,8 +16,6 @@ print(f"📂 Updating sheet: {current_month_sheet}")
 
 # Load bank file
 df_bank = pd.read_excel(bank_file, skiprows=1)
-
-print(f"📌 Bank file columns detected: {df_bank.columns.tolist()}")
 
 # Delete "descripción" column (duplicate one)
 df_bank = df_bank.drop(columns=["Descripción"])
@@ -34,7 +32,7 @@ expected_columns = ["N° Secuencia", "Fecha", "Descripción", "Importe", "Saldo"
 df_bank = df_bank[expected_columns]
 
 # ✅ Load the master file without modifying formatting
-wb = load_workbook(master_file)
+wb = load_workbook(transfer_file)
 if current_month_sheet not in wb.sheetnames:
     print(f"❌ Error: Sheet '{current_month_sheet}' not found in master file.")
     exit()
@@ -80,6 +78,6 @@ for row in df_new.itertuples(index=False):
         ws.cell(row=2, column=col_num, value=value)
 
 # ✅ Save without losing formatting
-wb.save(master_file)
+wb.save(transfer_file)
 wb.close()
-print(f"✅ Master file updated successfully: {master_file}")
+print("   ✅ Transfer file updated successfully")

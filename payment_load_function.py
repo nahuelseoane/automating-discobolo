@@ -2,7 +2,7 @@ import os
 import time
 import traceback
 import pandas as pd
-from filter_payments import update_loaded_status, extract_operation_number, extract_date, sanitize_filename
+from filter_payments import update_loaded_status, extract_operation_number, extract_date, sanitize_filename, extract_deposito
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support.ui import Select
@@ -11,7 +11,7 @@ from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 
 
-def payment_load(df, driver, download_root, excel_file, sheet_name):
+def payment_load(df, driver, download_root, excel_file, sheet_name, year):
     original_window = driver.current_window_handle
     time.sleep(2)
     # Close extra tabs
@@ -30,8 +30,20 @@ def payment_load(df, driver, download_root, excel_file, sheet_name):
         seq, amount = row['N° Secuencia'], row['Importe']
         concept = row["Concepto"]
 
+        if extract_deposito(row["Descripción"]):
+            print(f"   🔃 Skipping - DEPOSITO - {seq}")
+            continue
+
+        if str(concept).strip().lower() == "deposito":
+            print(f"   🔃 Skipping - DEPOSITO - {seq}")
+            continue
+
+        if str(row['Sytech']).strip().lower() == "no":
+            print(f"   🔃 Skipping {concept} - not to be loaded.")
+            continue
+
         if str(row['Sytech']).strip().lower() == "si":
-            print(f"🔃 Skipping {user} - Payment already loaded.")
+            print(f"   🔃 Skipping {user} - Payment already loaded.")
             continue
 
         if pd.isna(concept):
@@ -127,7 +139,7 @@ def payment_load(df, driver, download_root, excel_file, sheet_name):
 
             # 1. Fecha imputada
             fecha_imputacion = driver.find_element(By.ID, "p_fecha_imputacion")
-            fecha_extraida = extract_date(row['Descripción'])
+            fecha_extraida = extract_date(row['Descripción'], year)
             if fecha_extraida:
                 fecha_imputacion.clear()
                 fecha_imputacion.send_keys(fecha_extraida)
@@ -244,7 +256,7 @@ def payment_load(df, driver, download_root, excel_file, sheet_name):
                 else:
                     print("⚠️ No extra tab detected for PDF.")
 
-                print(f"  ✅ {user} Payment successfully loaded")
+                print(f"  ✅ {user} Payment successfully loaded - {seq}")
             except Exception as e:
                 print(f"❌ Error downloading receipt: {str(e)}")
                 print("⚒️ Full error detail:")

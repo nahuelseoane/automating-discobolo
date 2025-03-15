@@ -17,7 +17,6 @@ months_es = {
 
 month_en = datetime.now().strftime("%B")
 current_month = months_es[month_en]  # e.g., 'Marzo'
-print(current_month)
 df_daily = pd.read_excel(morosos_daily, skiprows=5, engine="openpyxl")
 wb = load_workbook(morosos_main)
 
@@ -32,9 +31,9 @@ try:
         wb.create_sheet(current_month)  # Create new sheet
         wb.save(morosos_main)
 
-        print(f"✅ {current_month} sheet created successfully.")
-    else:
-        print(f"✅ {current_month} sheet already exists.")
+        # print(f"✅ {current_month} sheet created successfully.")
+    # else:
+        # print(f"✅ {current_month} sheet already exists.")
 
 except FileNotFoundError:
     print("❌ Error: Main Morosos file not found!")
@@ -91,5 +90,5 @@ with pd.ExcelWriter(morosos_main, engine="openpyxl", mode="a", if_sheet_exists="
         for cell in row:
             cell.number_format = '"$"#,##0.00'
 
-print("✅ Changes saved successfully!")
+print("   ✅ Morosos main file updated.")
 wb.close()

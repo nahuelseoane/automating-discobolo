@@ -113,4 +113,4 @@ wb_main.save(main_file)
 wb_main.close()
 
 # df_main.to_excel(main_file, index=False)
-print("🎉Emails sent successfully!")
+print("   🎉Emails sent successfully!")

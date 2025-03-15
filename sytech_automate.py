@@ -1,14 +1,16 @@
 import time
 import pandas as pd
-from filter_payments import load_and_filter_payments, filter_positive_payments
+from filter_payments import load_and_filter_payments, filter_positive_payments, select_month
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from payment_load_function import payment_load
 
 # Load the Excel file with payments
-month = 'Marzo'
+YEAR = ${YEAR}
+month_number = 3
+month = select_month(month_number)
 sheet_name = month
-transfer_file = "${BASE_PATH}/${YEAR}/Transferencias ${YEAR}.xlsx"
+transfer_file = f"${BASE_PATH}/{YEAR}/Transferencias {YEAR}.xlsx"
 df, df_filtered = load_and_filter_payments(transfer_file, sheet_name)
 df, df_transfer = filter_positive_payments(transfer_file, sheet_name)
 
@@ -17,7 +19,7 @@ df["Fecha"] = pd.to_datetime(df["Fecha"], dayfirst=True)
 df["Fecha"] = df["Fecha"].dt.strftime("%d/%m/%Y")
 
 # Download path
-download_path = f"${BASE_PATH}/${YEAR}/3 {month} ${YEAR}"
+download_path = f"${BASE_PATH}/{YEAR}/{month_number} {month} {YEAR}"
 download_root = download_path
 
 # Configure Chrome to autodefine folder
@@ -69,7 +71,8 @@ login_button.click()
 
 
 # Step 3: Loop through each payment in the Excel file
-payment_load(df_transfer, driver, download_root, transfer_file, sheet_name)
+payment_load(df_transfer, driver, download_root,
+             transfer_file, sheet_name, YEAR)
 
 print("✅ All payments processed successfully!")
 

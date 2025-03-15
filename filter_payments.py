@@ -4,6 +4,25 @@ from openpyxl import load_workbook
 from openpyxl.styles import PatternFill
 
 
+def select_month(number):
+    months = [
+        "",         # index 0 (empty to make months[1] = "Enero")
+        "Enero",
+        "Febrero",
+        "Marzo",
+        "Abril",
+        "Mayo",
+        "Junio",
+        "Julio",
+        "Agosto",
+        "Septiembre",
+        "Octubre",
+        "Noviembre",
+        "Diciembre"
+    ]
+    return months[number]
+
+
 def load_and_filter_payments(excel_file, sheet_name):
     """Load excel file and filter payments by 'Cuota' in the 'Concept' column."""
     try:
@@ -53,12 +72,15 @@ def update_loaded_status(excel_file, sheet_name, seq):
 
         # ✅ Find the correct row for the client
         for row in ws.iter_rows(min_row=2, max_row=ws.max_row, values_only=False):
-            if row[0].value == seq:  # Assuming is Column G
+            if str(row[0].value).strip() == str(seq).strip():  # Assuming is Column A
                 sent_cell = row[7]  # Column H (Sytech)
-                importe_cell = row[3]  # Column D (Importe)
-                importe_cell.fill = gray_fill
                 # ✅ Update the cell without affecting formatting
                 sent_cell.value = "Si"
+                importe_cell = row[3]  # Column D (Importe)
+                importe_cell.fill = gray_fill
+            else:
+                print(
+                    f"   ❌ Seq number does not match {seq} - {row[0].value} - Can't update status and color.")
 
         # ✅ Save the file without overwriting sheets or formatting
         wb.save(excel_file)
@@ -89,12 +111,21 @@ def extract_operation_number(description):
         print(f"❌ Error extracting operation number: {e}")
 
 
-def extract_date(description):
+def extract_date(description, year):
     """Extracts the first occurrence of a date in DD/MM format from any transaction description."""
     match = re.search(r"(\d{2}/\d{2})",
                       description)  # Looks for first DD/MM pattern
     # Return the date if found, else None
-    return match.group(1) + '/${YEAR}' if match else None
+    return match.group(1) + f'/{year}' if match else None
+
+
+def extract_deposito(description):
+    """
+    Checks if the word 'DEPOSITO' is in the description.
+    Returns True if found, otherwise False.
+    """
+    match = re.search(r'\bDEPOSITO\b', description)
+    return bool(match)
 
 
 def extract_dni(description):
