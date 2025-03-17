@@ -78,9 +78,7 @@ def update_loaded_status(excel_file, sheet_name, seq):
                 sent_cell.value = "Si"
                 importe_cell = row[3]  # Column D (Importe)
                 importe_cell.fill = gray_fill
-            else:
-                print(
-                    f"   ❌ Seq number does not match {seq} - {row[0].value} - Can't update status and color.")
+                break
 
         # ✅ Save the file without overwriting sheets or formatting
         wb.save(excel_file)
