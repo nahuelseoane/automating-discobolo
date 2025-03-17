@@ -4,28 +4,36 @@ from filter_payments import load_and_filter_payments, filter_positive_payments, 
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from payment_load_function import payment_load
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Load the Excel file with payments
-YEAR = ${YEAR}
-month_number = 3
-month = select_month(month_number)
-sheet_name = month
-transfer_file = f"${BASE_PATH}/{YEAR}/Transferencias {YEAR}.xlsx"
-df, df_filtered = load_and_filter_payments(transfer_file, sheet_name)
-df, df_transfer = filter_positive_payments(transfer_file, sheet_name)
+YEAR = os.getenv("YEAR")
+TRANSFER_FILE = os.getenv("TRANSFER_FILE")
+BASE_PATH = os.getenv("BASE_PATH")
+MONTH_NUMBER = int(os.getenv("MONTH_NUMBER"))
+MONTH = select_month(MONTH_NUMBER)
+EMAILS_FILE = f"{BASE_PATH}/{YEAR}/EmailSocios.xlsx"
+PAYMENT_PATH = f"{BASE_PATH}/{YEAR}/{MONTH_NUMBER} {MONTH} {YEAR}"
+TRANSFER_FILE = f"{BASE_PATH}/{YEAR}/Transferencias {YEAR}.xlsx"
+SHEET_NAME = MONTH
+
+SYTECH_USER = os.getenv("SYTECH_USER")
+SYTECH_PASSWORD = os.getenv("SYTECH_PASSWORD")
+
+df, df_filtered = load_and_filter_payments(TRANSFER_FILE, SHEET_NAME)
+df, df_transfer = filter_positive_payments(TRANSFER_FILE, SHEET_NAME)
 
 # ✅ Convert to the correct format
 df["Fecha"] = pd.to_datetime(df["Fecha"], dayfirst=True)
 df["Fecha"] = df["Fecha"].dt.strftime("%d/%m/%Y")
 
-# Download path
-download_path = f"${BASE_PATH}/{YEAR}/{month_number} {month} {YEAR}"
-download_root = download_path
-
 # Configure Chrome to autodefine folder
 chrome_options = webdriver.ChromeOptions()
 prefs = {
-    "download.default_directory": download_root,
+    "download.default_directory": PAYMENT_PATH,
     "download.prompt_for_download": False,  # False - Disable the "Save As" dialog
     "download.directory_upgrade": True,
     # True - Prevent Chrome from opening PDFs
@@ -50,7 +58,7 @@ driver = webdriver.Chrome(options=chrome_options)
 
 driver.execute_cdp_cmd("Page.setDownloadBehavior", {
     "behavior": "allow",
-    "downloadPath": download_root  # ✅ Force Chrome to use the right folder
+    "downloadPath": PAYMENT_PATH  # ✅ Force Chrome to use the right folder
 })
 
 # Open Sytech
@@ -65,14 +73,14 @@ password_input = driver.find_element(By.ID, "user_password")
 login_button = driver.find_element(
     By.XPATH, '//*[@id="loginModal"]/div/div/div[2]/div/form/div[3]/div[2]/div/div/div[2]/button')
 
-username_input.send_keys("${SYTECH_USER}")
-password_input.send_keys("${SYTECH_PASSWORD}")
+username_input.send_keys(SYTECH_USER)
+password_input.send_keys(SYTECH_PASSWORD)
 login_button.click()
 
 
 # Step 3: Loop through each payment in the Excel file
-payment_load(df_transfer, driver, download_root,
-             transfer_file, sheet_name, YEAR)
+payment_load(df_transfer, driver, PAYMENT_PATH,
+             TRANSFER_FILE, SHEET_NAME, YEAR)
 
 print("✅ All payments processed successfully!")
 

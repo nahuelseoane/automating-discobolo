@@ -1,10 +1,23 @@
 import pandas as pd
 from openpyxl import load_workbook
 from datetime import datetime
+from filter_payments import select_month
+import os
+from dotenv import load_dotenv
 
-# File paths
-transfer_file = "${BASE_PATH}/${YEAR}/Transferencias ${YEAR}.xlsx"
-bank_file = "${BASE_PATH}/${YEAR}/MovimientosBanco.xlsx"
+load_dotenv()
+
+# Load the Excel file with payments
+YEAR = os.getenv("YEAR")
+TRANSFER_FILE = os.getenv("TRANSFER_FILE")
+BASE_PATH = os.getenv("BASE_PATH")
+MONTH_NUMBER = int(os.getenv("MONTH_NUMBER"))
+MONTH = select_month(MONTH_NUMBER)
+EMAILS_FILE = f"{BASE_PATH}/{YEAR}/EmailSocios.xlsx"
+PAYMENT_PATH = f"{BASE_PATH}/{YEAR}/{MONTH_NUMBER} {MONTH} {YEAR}"
+TRANSFER_FILE = f"{BASE_PATH}/{YEAR}/Transferencias {YEAR}.xlsx"
+BANK_FILE = f"{BASE_PATH}/{YEAR}/MovimientosBanco.xlsx"
+SHEET_NAME = MONTH
 
 # Get current month index (1 = January, 2 = February, ...)
 current_month_number = datetime.now().month
@@ -12,10 +25,10 @@ current_month_number = datetime.now().month
 month_names = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
                "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
 current_month_sheet = month_names[current_month_number - 1]
-print(f"📂 Updating sheet: {current_month_sheet}")
+print(f"   📂 Updating sheet: {current_month_sheet}")
 
 # Load bank file
-df_bank = pd.read_excel(bank_file, skiprows=1)
+df_bank = pd.read_excel(BANK_FILE, skiprows=1)
 
 # Delete "descripción" column (duplicate one)
 df_bank = df_bank.drop(columns=["Descripción"])
@@ -32,7 +45,7 @@ expected_columns = ["N° Secuencia", "Fecha", "Descripción", "Importe", "Saldo"
 df_bank = df_bank[expected_columns]
 
 # ✅ Load the master file without modifying formatting
-wb = load_workbook(transfer_file)
+wb = load_workbook(TRANSFER_FILE)
 if current_month_sheet not in wb.sheetnames:
     print(f"❌ Error: Sheet '{current_month_sheet}' not found in master file.")
     exit()
@@ -59,14 +72,14 @@ for row in ws.iter_rows(min_row=2, values_only=True):
 if last_sequence is None:
     print("❌ Could not determine last sequence number in master file.")
     exit()
-print(f"📌 Last recorded sequence in master: {last_sequence}")
+print(f"   📌 Last recorded sequence in master: {last_sequence}")
 
 # ✅ Filter only new transactions
 df_new = df_bank[df_bank["N° Secuencia"] > last_sequence]
 df_new = df_new.sort_values(by="N° Secuencia", ascending=True)  # Correct order
 
 if df_new.empty:
-    print("✅ No new transactions to add.")
+    print("   ✅ No new transactions to add.")
     exit()
 
 print(f"📌 Adding {len(df_new)} new transactions to {current_month_sheet}.")
@@ -78,6 +91,6 @@ for row in df_new.itertuples(index=False):
         ws.cell(row=2, column=col_num, value=value)
 
 # ✅ Save without losing formatting
-wb.save(transfer_file)
+wb.save(TRANSFER_FILE)
 wb.close()
 print("   ✅ Transfer file updated successfully")

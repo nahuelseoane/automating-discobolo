@@ -1,34 +1,39 @@
+import os
 import smtplib
 import pandas as pd
-from filter_payments import extract_operation_number
+from filter_payments import extract_operation_number, select_month
 from openpyxl import load_workbook
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
-import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Email settings
-SMTP_SERVER = '${SMTP_SERVER}'  # or your email provider's SMTP server
-SMTP_PORT = ${SMTP_PORT}
-EMAIL_USER = '${EMAIL_USER}'  # your email address
-EMAIL_PASSWORD = '${EMAIL_PASSWORD}'  # your email password
+SMTP_SERVER = os.getenv("SMTP_SERVER")
+SMTP_PORT = int(os.getenv("SMTP_PORT"))
+EMAIL_USER = os.getenv("EMAIL_USER")
+EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 
 # Define storage folders
-main_file = "${BASE_PATH}/${YEAR}/Transferencias ${YEAR}.xlsx"
-month = 'Marzo'
-sheet_name = month
-emails_file = "${BASE_PATH}/${YEAR}/EmailSocios.xlsx"
-payments_path = f"${BASE_PATH}/${YEAR}/3 {month} ${YEAR}"
-payments_folder = payments_path
+YEAR = os.getenv("YEAR")
+TRANSFER_FILE = os.getenv("TRANSFER_FILE")
+BASE_PATH = os.getenv("BASE_PATH")
+MONTH_NUMBER = int(os.getenv("MONTH_NUMBER"))
+MONTH = select_month(MONTH_NUMBER)
+EMAILS_FILE = f"{BASE_PATH}/{YEAR}/EmailSocios.xlsx"
+PAYMENT_PATH = f"{BASE_PATH}/{YEAR}/{MONTH_NUMBER} {MONTH} {YEAR}"
+sheet_name = MONTH
 
 # Load Excel files
-df_main = pd.read_excel(main_file, sheet_name=sheet_name)
+df_main = pd.read_excel(TRANSFER_FILE, sheet_name=sheet_name)
 df_filtered = df_main[df_main["Concepto"].str.contains(
     "Cuota", case=False, na=False)].copy()
 df_filtered.reset_index(drop=True, inplace=True)
 print(
-    f"✅ Loaded {len(df_filtered)} payments from {sheet_name} (Cuotas) only.")
-df_emails = pd.read_excel(emails_file, sheet_name=sheet_name)
+    f"   🔃 Loaded {len(df_filtered)} payments from {sheet_name} (Cuotas) only.")
+df_emails = pd.read_excel(EMAILS_FILE, sheet_name=sheet_name)
 
 
 # Merging files
@@ -74,7 +79,7 @@ def send_email(user, recipient_email, pdf_path):
 
 
 # Loading workbook for later saving 'Si' in Email Sent column
-wb_main = load_workbook(main_file)
+wb_main = load_workbook(TRANSFER_FILE)
 if sheet_name not in wb_main.sheetnames:
     print(f"❌ {sheet_name} not find in Main Excel sheet names.")
 ws_main = wb_main[sheet_name]
@@ -89,7 +94,7 @@ for index, row in df_merged.iterrows():
     email = str(email) if isinstance(email, str) else ""
     email = email.split(";")[0].strip()
     if str(row['Email']).strip().lower() == "si":  # Skip emails already sent
-        print(f"🔃 Skipping {user} - Email already sent.")
+        # print(f"🔃 Skipping {user} - Email already sent.")
         continue
 
     if not email or "@" not in email:
@@ -99,7 +104,7 @@ for index, row in df_merged.iterrows():
     # Construct full PDF path
     pdf_filename = user.replace(",", "") + "_" + transaction_number + ".pdf"
     print(f"🔎 Sending email to {user}")
-    pdf_path = os.path.join(payments_folder, pdf_filename)
+    pdf_path = os.path.join(PAYMENT_PATH, pdf_filename)
 
     if send_email(user, email, pdf_path):  # If email was sent successfully
         # Mark email as sent in DataFrame
@@ -109,7 +114,7 @@ for index, row in df_merged.iterrows():
                 sent_cell.value = "Si"  # ✅ Update the cell without affecting formatting
 
 # ✅ Save the file without overwriting sheets or formatting
-wb_main.save(main_file)
+wb_main.save(TRANSFER_FILE)
 wb_main.close()
 
 # df_main.to_excel(main_file, index=False)

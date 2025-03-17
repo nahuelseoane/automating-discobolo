@@ -2,20 +2,26 @@ import os
 import time
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from dotenv import load_dotenv
 
-r10240 = '${R10240}'
-download_path = "${BASE_PATH}/Morosos/descarga_reporte"
+load_dotenv()
+
+SYTECH_USER = os.getenv("SYTECH_USER")
+SYTECH_PASSWORD = os.getenv("SYTECH_PASSWORD")
+BASE_PATH = os.getenv("BASE_PATH")
+R10240 = os.getenv("R10240")
+MOROSOS_DOWNLOAD = f"{BASE_PATH}/Morosos/descarga_reporte"
 
 chrome_options = webdriver.ChromeOptions()
 prefs = {
-    "download.default_directory": download_path,
+    "download.default_directory": MOROSOS_DOWNLOAD,
 }
 chrome_options.add_experimental_option("prefs", prefs)
 chrome_options.add_argument("--start-maximized")
 driver = webdriver.Chrome(options=chrome_options)
 driver.execute_cdp_cmd("Page.setDownloadBehavior", {
     "behavior": "allow",
-    "downloadPath": download_path  # ✅ Force Chrome to use the right folder
+    "downloadPath": MOROSOS_DOWNLOAD  # ✅ Force Chrome to use the right folder
 })
 
 # Open Sytech
@@ -26,8 +32,8 @@ password_input = driver.find_element(By.ID, "user_password")
 login_button = driver.find_element(
     By.XPATH, '//*[@id="loginModal"]/div/div/div[2]/div/form/div[3]/div[2]/div/div/div[2]/button')
 
-username_input.send_keys("${SYTECH_USER}")
-password_input.send_keys("${SYTECH_PASSWORD}")
+username_input.send_keys(SYTECH_USER)
+password_input.send_keys(SYTECH_PASSWORD)
 login_button.click()
 
 original_window = driver.current_window_handle
@@ -39,7 +45,7 @@ for handle in driver.window_handles:
         driver.close()
 driver.switch_to.window(original_window)
 # Go to report
-driver.get(r10240)
+driver.get(R10240)
 time.sleep(2)
 pantalla_button = driver.find_element(By.ID, 'key_xlsx')
 pantalla_button.click()
@@ -50,7 +56,7 @@ timeout = 30
 start_time = time.time()
 
 while not downloaded and time.time() - start_time < timeout:
-    files = os.listdir(download_path)
+    files = os.listdir(MOROSOS_DOWNLOAD)
     downloading = [f for f in files if f.endswith('.crdownload')]
     if not downloading and any(f.endswith('.xlsx') for f in files):
         downloaded = True
@@ -63,7 +69,7 @@ if downloaded:
     wait_start = time.time()
 
     while not found_file and time.time() - wait_start < wait_seconds:
-        for f in os.listdir(download_path):
+        for f in os.listdir(MOROSOS_DOWNLOAD):
             if f == "rockhopper_R10240.xlsx":
                 found_file = f
                 break
@@ -72,8 +78,8 @@ if downloaded:
 
     if found_file:
 
-        old_path = os.path.join(download_path, f)
-        new_path = os.path.join(download_path, "reporte_morosos.xlsx")
+        old_path = os.path.join(MOROSOS_DOWNLOAD, f)
+        new_path = os.path.join(MOROSOS_DOWNLOAD, "reporte_morosos.xlsx")
 
         if os.path.exists(new_path):
             os.remove(new_path)

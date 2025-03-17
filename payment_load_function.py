@@ -43,7 +43,7 @@ def payment_load(df, driver, download_root, excel_file, sheet_name, year):
             continue
 
         if str(row['Sytech']).strip().lower() == "si":
-            print(f"   🔃 Skipping {user} - Payment already loaded.")
+            # print(f"   🔃 Skipping {user} - Payment already loaded.")
             continue
 
         if pd.isna(concept):

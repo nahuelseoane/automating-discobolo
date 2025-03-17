@@ -20,7 +20,7 @@ def creating_backup(backup_dir, file):
         backup_dir, f"{filename}_backup_{datetime.now().strftime('%Y-%m-%d')}.xlsx"
     )
     shutil.copyfile(file, backup_file)
-    print(f"  ✅ Backup created: {filename}")
+    print(f"   ✅ Backup created: {filename}")
     return
 
 
