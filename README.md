@@ -1,4 +1,4 @@
-# 📬 AutoDiscoEmails - Automated Transfers & Notifications System
+# 📬 Automating Discobolo - Automated Transfers & Notifications System
 
 Welcome to **AutoDiscoEmails**, a Python-based automation system built to streamline:
 - 💳 Payment data processing
