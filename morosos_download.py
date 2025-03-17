@@ -2,15 +2,8 @@ import os
 import time
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from dotenv import load_dotenv
+from config import MOROSOS_DOWNLOAD, SYTECH_USER, SYTECH_PASSWORD, R10240, URL_SYTECH_MAIN
 
-load_dotenv()
-
-SYTECH_USER = os.getenv("SYTECH_USER")
-SYTECH_PASSWORD = os.getenv("SYTECH_PASSWORD")
-BASE_PATH = os.getenv("BASE_PATH")
-R10240 = os.getenv("R10240")
-MOROSOS_DOWNLOAD = f"{BASE_PATH}/Morosos/descarga_reporte"
 
 chrome_options = webdriver.ChromeOptions()
 prefs = {
@@ -25,7 +18,7 @@ driver.execute_cdp_cmd("Page.setDownloadBehavior", {
 })
 
 # Open Sytech
-driver.get("${URL_SYTECH_MAIN}")
+driver.get(URL_SYTECH_MAIN)
 
 username_input = driver.find_element(By.ID, "user_name")
 password_input = driver.find_element(By.ID, "user_password")

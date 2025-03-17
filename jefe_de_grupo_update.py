@@ -1,24 +1,11 @@
 import os
 import pandas as pd
 from openpyxl import load_workbook
-from filter_payments import extract_dni, filter_positive_payments, select_month
-from dotenv import load_dotenv
+from filter_payments import extract_dni, filter_positive_payments
+from config import TRANSFER_FILE, SHEET_NAME, EMAILS_FILE
 
-load_dotenv()
-
-# Load the Excel file with payments
-YEAR = os.getenv("YEAR")
-TRANSFER_FILE = os.getenv("TRANSFER_FILE")
-BASE_PATH = os.getenv("BASE_PATH")
-MONTH_NUMBER = int(os.getenv("MONTH_NUMBER"))
-MONTH = select_month(MONTH_NUMBER)
-EMAILS_FILE = f"{BASE_PATH}/{YEAR}/EmailSocios.xlsx"
-PAYMENT_PATH = f"{BASE_PATH}/{YEAR}/{MONTH_NUMBER} {MONTH} {YEAR}"
-TRANSFER_FILE = f"{BASE_PATH}/{YEAR}/Transferencias {YEAR}.xlsx"
-
-sheet_name = MONTH
-df, transfer = filter_positive_payments(TRANSFER_FILE, sheet_name)
-df_emails = pd.read_excel(EMAILS_FILE, sheet_name=sheet_name)
+df, transfer = filter_positive_payments(TRANSFER_FILE, SHEET_NAME)
+df_emails = pd.read_excel(EMAILS_FILE, sheet_name=SHEET_NAME)
 
 transfer["DNI"] = transfer["Descripción"].apply(extract_dni)
 
@@ -33,7 +20,7 @@ df_merged = transfer.merge(
 
 # Load the workbook
 wb = load_workbook(TRANSFER_FILE)
-ws = wb[sheet_name]
+ws = wb[SHEET_NAME]
 
 for idx, row in df_merged.iterrows():
     full_name = row['Jefe de Grupo I']

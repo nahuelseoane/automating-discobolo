@@ -1,27 +1,10 @@
 import time
 import pandas as pd
-from filter_payments import load_and_filter_payments, filter_positive_payments, select_month
+from filter_payments import load_and_filter_payments, filter_positive_payments
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from payment_load_function import payment_load
-import os
-from dotenv import load_dotenv
-
-load_dotenv()
-
-# Load the Excel file with payments
-YEAR = os.getenv("YEAR")
-TRANSFER_FILE = os.getenv("TRANSFER_FILE")
-BASE_PATH = os.getenv("BASE_PATH")
-MONTH_NUMBER = int(os.getenv("MONTH_NUMBER"))
-MONTH = select_month(MONTH_NUMBER)
-EMAILS_FILE = f"{BASE_PATH}/{YEAR}/EmailSocios.xlsx"
-PAYMENT_PATH = f"{BASE_PATH}/{YEAR}/{MONTH_NUMBER} {MONTH} {YEAR}"
-TRANSFER_FILE = f"{BASE_PATH}/{YEAR}/Transferencias {YEAR}.xlsx"
-SHEET_NAME = MONTH
-
-SYTECH_USER = os.getenv("SYTECH_USER")
-SYTECH_PASSWORD = os.getenv("SYTECH_PASSWORD")
+from config import TRANSFER_FILE, SHEET_NAME, PAYMENT_PATH, SYTECH_USER, SYTECH_PASSWORD, YEAR, URL_SYTECH_MAIN
 
 df, df_filtered = load_and_filter_payments(TRANSFER_FILE, SHEET_NAME)
 df, df_transfer = filter_positive_payments(TRANSFER_FILE, SHEET_NAME)
@@ -62,7 +45,7 @@ driver.execute_cdp_cmd("Page.setDownloadBehavior", {
 })
 
 # Open Sytech
-driver.get("${URL_SYTECH_MAIN}")
+driver.get(URL_SYTECH_MAIN)
 
 # Wait for the page to load
 time.sleep(3)

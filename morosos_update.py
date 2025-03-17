@@ -1,27 +1,8 @@
 import pandas as pd
-from datetime import datetime
 from openpyxl import load_workbook
 from openpyxl.styles import Font, PatternFill
 from openpyxl.utils import get_column_letter
-import os
-from dotenv import load_dotenv
-from filter_payments import select_month
-
-load_dotenv()
-
-# Loading main variables
-YEAR = os.getenv("YEAR")
-TRANSFER_FILE = os.getenv("TRANSFER_FILE")
-BASE_PATH = os.getenv("BASE_PATH")
-MONTH_NUMBER = int(os.getenv("MONTH_NUMBER"))
-MONTH = select_month(MONTH_NUMBER)
-EMAILS_FILE = f"{BASE_PATH}/{YEAR}/EmailSocios.xlsx"
-PAYMENT_PATH = f"{BASE_PATH}/{YEAR}/{MONTH_NUMBER} {MONTH} {YEAR}"
-TRANSFER_FILE = f"{BASE_PATH}/{YEAR}/Transferencias {YEAR}.xlsx"
-BANK_FILE = f"{BASE_PATH}/{YEAR}/MovimientosBanco.xlsx"
-SHEET_NAME = MONTH
-MOROSOS_DAILY = f"{BASE_PATH}/Morosos/descarga_reporte/reporte_morosos.xlsx"
-MOROSOS_MAIN = f"{BASE_PATH}/Morosos/Morosos {YEAR}.xlsx"
+from config import MOROSOS_DAILY, MOROSOS_MAIN, MONTH
 
 
 df_daily = pd.read_excel(MOROSOS_DAILY, skiprows=5, engine="openpyxl")

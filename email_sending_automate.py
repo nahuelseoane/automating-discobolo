@@ -6,34 +6,16 @@ from openpyxl import load_workbook
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
-from dotenv import load_dotenv
-
-load_dotenv()
-
-# Email settings
-SMTP_SERVER = os.getenv("SMTP_SERVER")
-SMTP_PORT = int(os.getenv("SMTP_PORT"))
-EMAIL_USER = os.getenv("EMAIL_USER")
-EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
-
-# Define storage folders
-YEAR = os.getenv("YEAR")
-TRANSFER_FILE = os.getenv("TRANSFER_FILE")
-BASE_PATH = os.getenv("BASE_PATH")
-MONTH_NUMBER = int(os.getenv("MONTH_NUMBER"))
-MONTH = select_month(MONTH_NUMBER)
-EMAILS_FILE = f"{BASE_PATH}/{YEAR}/EmailSocios.xlsx"
-PAYMENT_PATH = f"{BASE_PATH}/{YEAR}/{MONTH_NUMBER} {MONTH} {YEAR}"
-sheet_name = MONTH
+from config import TRANSFER_FILE, SHEET_NAME, EMAILS_FILE, EMAIL_USER, SMTP_SERVER, SMTP_PORT, EMAIL_PASSWORD, PAYMENT_PATH
 
 # Load Excel files
-df_main = pd.read_excel(TRANSFER_FILE, sheet_name=sheet_name)
+df_main = pd.read_excel(TRANSFER_FILE, sheet_name=SHEET_NAME)
 df_filtered = df_main[df_main["Concepto"].str.contains(
     "Cuota", case=False, na=False)].copy()
 df_filtered.reset_index(drop=True, inplace=True)
 print(
-    f"   🔃 Loaded {len(df_filtered)} payments from {sheet_name} (Cuotas) only.")
-df_emails = pd.read_excel(EMAILS_FILE, sheet_name=sheet_name)
+    f"   🔃 Loaded {len(df_filtered)} payments from {SHEET_NAME} (Cuotas) only.")
+df_emails = pd.read_excel(EMAILS_FILE, sheet_name=SHEET_NAME)
 
 
 # Merging files
@@ -80,9 +62,9 @@ def send_email(user, recipient_email, pdf_path):
 
 # Loading workbook for later saving 'Si' in Email Sent column
 wb_main = load_workbook(TRANSFER_FILE)
-if sheet_name not in wb_main.sheetnames:
-    print(f"❌ {sheet_name} not find in Main Excel sheet names.")
-ws_main = wb_main[sheet_name]
+if SHEET_NAME not in wb_main.sheetnames:
+    print(f"❌ {SHEET_NAME} not find in Main Excel sheet names.")
+ws_main = wb_main[SHEET_NAME]
 
 # Loop through each recipient and send the email
 for index, row in df_merged.iterrows():

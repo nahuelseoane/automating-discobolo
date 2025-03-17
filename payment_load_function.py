@@ -9,6 +9,7 @@ from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
+from config import URL_SYTECH_COBRANZAS
 
 
 def payment_load(df, driver, download_root, excel_file, sheet_name, year):
@@ -22,7 +23,7 @@ def payment_load(df, driver, download_root, excel_file, sheet_name, year):
     driver.switch_to.window(original_window)
 
     # Step 2: Navigate to the payment entry page
-    driver.get("${URL_SYTECH_COBRANZAS}")
+    driver.get(URL_SYTECH_COBRANZAS)
     time.sleep(2)
     for index, row in df.iterrows():
         # Checking if Payment already enter

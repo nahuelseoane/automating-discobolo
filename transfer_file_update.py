@@ -1,23 +1,8 @@
 import pandas as pd
 from openpyxl import load_workbook
 from datetime import datetime
-from filter_payments import select_month
-import os
-from dotenv import load_dotenv
+from config import TRANSFER_FILE, BANK_FILE
 
-load_dotenv()
-
-# Load the Excel file with payments
-YEAR = os.getenv("YEAR")
-TRANSFER_FILE = os.getenv("TRANSFER_FILE")
-BASE_PATH = os.getenv("BASE_PATH")
-MONTH_NUMBER = int(os.getenv("MONTH_NUMBER"))
-MONTH = select_month(MONTH_NUMBER)
-EMAILS_FILE = f"{BASE_PATH}/{YEAR}/EmailSocios.xlsx"
-PAYMENT_PATH = f"{BASE_PATH}/{YEAR}/{MONTH_NUMBER} {MONTH} {YEAR}"
-TRANSFER_FILE = f"{BASE_PATH}/{YEAR}/Transferencias {YEAR}.xlsx"
-BANK_FILE = f"{BASE_PATH}/{YEAR}/MovimientosBanco.xlsx"
-SHEET_NAME = MONTH
 
 # Get current month index (1 = January, 2 = February, ...)
 current_month_number = datetime.now().month
