@@ -1,13 +1,25 @@
 import time
 import pandas as pd
-from filter_payments import load_and_filter_payments, filter_positive_payments
+from extra_functions import filter_positive_payments
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from payment_load_function import payment_load
 from config import TRANSFER_FILE, SHEET_NAME, PAYMENT_PATH, SYTECH_USER, SYTECH_PASSWORD, YEAR, URL_SYTECH_MAIN
 
-df, df_filtered = load_and_filter_payments(TRANSFER_FILE, SHEET_NAME)
-df, df_transfer = filter_positive_payments(TRANSFER_FILE, SHEET_NAME)
+df, df_filtered = filter_positive_payments(TRANSFER_FILE, SHEET_NAME)
+# Counting concepts
+main_concepts = ['CUOTA', 'TENIS', 'ESCUELITA']
+df_filtered['Concepto_grouped'] = df_filtered['Concepto'].where(
+    df_filtered['Concepto'].isin(main_concepts), 'OTROS')
+concept_counts = df_filtered['Concepto_grouped'].value_counts()
+concept_counts_dict = concept_counts.to_dict()
+print("   🔢 Counting concepts:\n",
+      f"   🔸Total: {len(df_filtered)}\n",
+      f"   🔸Cuota: {concept_counts_dict['CUOTA']}\n",
+      f"   🔸Tenis: {concept_counts_dict['TENIS']}\n",
+      f"   🔸Escuelita: {concept_counts_dict['ESCUELITA']}\n",
+      f"   🔸Otros: {concept_counts_dict['OTROS']}\n"
+      )
 
 # ✅ Convert to the correct format
 df["Fecha"] = pd.to_datetime(df["Fecha"], dayfirst=True)
@@ -50,7 +62,7 @@ driver.get(URL_SYTECH_MAIN)
 # Wait for the page to load
 time.sleep(3)
 
-# Step 1: Log in (Modify these selectors for your login page)
+# Log in (Modify these selectors for your login page)
 username_input = driver.find_element(By.ID, "user_name")
 password_input = driver.find_element(By.ID, "user_password")
 login_button = driver.find_element(
@@ -61,8 +73,8 @@ password_input.send_keys(SYTECH_PASSWORD)
 login_button.click()
 
 
-# Step 3: Loop through each payment in the Excel file
-payment_load(df_transfer, driver, PAYMENT_PATH,
+# Loop through each payment in the Excel file
+payment_load(df_filtered, driver, PAYMENT_PATH,
              TRANSFER_FILE, SHEET_NAME, YEAR)
 
 print("✅ All payments processed successfully!")

@@ -1,7 +1,7 @@
 import pandas as pd
 from datetime import datetime
 from openpyxl import load_workbook
-from openpyxl.styles import Font, PatternFill, Alignment
+from openpyxl.styles import Font, PatternFill
 from openpyxl.utils import get_column_letter
 from config import MOROSOS_DAILY, MOROSOS_MAIN, MONTH
 
@@ -87,8 +87,6 @@ with pd.ExcelWriter(MOROSOS_MAIN, engine="openpyxl", mode="a", if_sheet_exists="
     worksheet["A1"].font = Font(italic=True, color="888888")
     worksheet.merge_cells(start_row=1, start_column=1,
                           end_row=1, end_column=len(df_daily.columns))
-    # worksheet["A1"].alignment = Alignment(horizontal="center")
-
 
 print("   ✅ Morosos main file updated.")
 wb.close()

@@ -1,16 +1,16 @@
 import os
 from dotenv import load_dotenv
-from filter_payments import select_month
+from extra_functions import select_month
 
 load_dotenv()
 
-# Email settings
+# EMAIL SETTINGS
 SMTP_SERVER = os.getenv("SMTP_SERVER")
 SMTP_PORT = int(os.getenv("SMTP_PORT"))
 EMAIL_USER = os.getenv("EMAIL_USER")
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 
-# PATH VARAIBLES
+# PATH VARIABLES
 YEAR = os.getenv("YEAR")
 TRANSFER_FILE = os.getenv("TRANSFER_FILE")
 BASE_PATH = os.getenv("BASE_PATH")

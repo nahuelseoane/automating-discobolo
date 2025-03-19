@@ -44,7 +44,7 @@ def filter_positive_payments(excel_file, sheet_name):
     try:
         df = pd.read_excel(excel_file, sheet_name=sheet_name)
         df_filtered = df[df['Importe'] > 0].copy()
-        print(f"   🔃 Loaded {len(df_filtered)} payments from {sheet_name}.")
+        # print(f"   🔃 Loaded {len(df_filtered)} payments from {sheet_name}.")
         return df, df_filtered
     except Exception as e:
         print(f"❌ Error loading Excel file: {e}")

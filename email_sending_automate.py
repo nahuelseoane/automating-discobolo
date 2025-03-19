@@ -1,7 +1,7 @@
 import os
 import smtplib
 import pandas as pd
-from filter_payments import extract_operation_number, select_month
+from extra_functions import extract_operation_number
 from openpyxl import load_workbook
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
