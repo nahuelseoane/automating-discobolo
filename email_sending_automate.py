@@ -6,7 +6,7 @@ from openpyxl import load_workbook
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
-from config import TRANSFER_FILE, SHEET_NAME, EMAILS_FILE, EMAIL_USER, SMTP_SERVER, SMTP_PORT, EMAIL_PASSWORD, PAYMENT_PATH
+from config import TRANSFER_FILE, SHEET_NAME, EMAILS_FILE, EMAIL_USER, SMTP_SERVER, SMTP_PORT, EMAIL_PASSWORD, PAYMENTS_PATH
 
 # Load Excel files
 df_main = pd.read_excel(TRANSFER_FILE, sheet_name=SHEET_NAME)
@@ -86,7 +86,7 @@ for index, row in df_merged.iterrows():
     # Construct full PDF path
     pdf_filename = user.replace(",", "") + "_" + transaction_number + ".pdf"
     print(f"🔎 Sending email to {user}")
-    pdf_path = os.path.join(PAYMENT_PATH, pdf_filename)
+    pdf_path = os.path.join(PAYMENTS_PATH, pdf_filename)
 
     if send_email(user, email, pdf_path):  # If email was sent successfully
         # Mark email as sent in DataFrame

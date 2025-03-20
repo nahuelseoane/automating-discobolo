@@ -4,7 +4,7 @@ from extra_functions import filter_positive_payments
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from payment_load_function import payment_load
-from config import TRANSFER_FILE, SHEET_NAME, PAYMENT_PATH, SYTECH_USER, SYTECH_PASSWORD, YEAR, URL_SYTECH_MAIN
+from config import TRANSFER_FILE, SHEET_NAME, PAYMENTS_PATH, SYTECH_USER, SYTECH_PASSWORD, YEAR, URL_SYTECH_MAIN
 
 df, df_filtered = filter_positive_payments(TRANSFER_FILE, SHEET_NAME)
 # Counting concepts
@@ -28,7 +28,7 @@ df["Fecha"] = df["Fecha"].dt.strftime("%d/%m/%Y")
 # Configure Chrome to autodefine folder
 chrome_options = webdriver.ChromeOptions()
 prefs = {
-    "download.default_directory": PAYMENT_PATH,
+    "download.default_directory": PAYMENTS_PATH,
     "download.prompt_for_download": False,  # False - Disable the "Save As" dialog
     "download.directory_upgrade": True,
     # True - Prevent Chrome from opening PDFs
@@ -53,7 +53,7 @@ driver = webdriver.Chrome(options=chrome_options)
 
 driver.execute_cdp_cmd("Page.setDownloadBehavior", {
     "behavior": "allow",
-    "downloadPath": PAYMENT_PATH  # ✅ Force Chrome to use the right folder
+    "downloadPath": PAYMENTS_PATH  # ✅ Force Chrome to use the right folder
 })
 
 # Open Sytech
@@ -74,7 +74,7 @@ login_button.click()
 
 
 # Loop through each payment in the Excel file
-payment_load(df_filtered, driver, PAYMENT_PATH,
+payment_load(df_filtered, driver, PAYMENTS_PATH,
              TRANSFER_FILE, SHEET_NAME, YEAR)
 
 print("✅ All payments processed successfully!")

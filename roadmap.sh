@@ -20,6 +20,14 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+# New Step: Downloading Movements from Bank
+echo "🔹🔹🔹🔹🔹🔹🔹 Downloading Bank Movements🔹🔹🔹🔹🔹🔹🔹 "
+python3 bank_movements_download.py
+if [ $? -ne 0 ]; then
+    echo "❌ Error running bank_movements_download.py"
+    exit 1
+fi
+
 # Step 3: Update_bank_file.py
 echo "🔹🔹🔹🔹🔹🔹🔹 Running transfer_file_update.py🔹🔹🔹🔹🔹🔹🔹 "
 python3 transfer_file_update.py
