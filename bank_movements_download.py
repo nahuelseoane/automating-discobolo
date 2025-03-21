@@ -1,13 +1,13 @@
 import os
-import shutil
 import time
 from selenium import webdriver
-from selenium.webdriver.chrome.webdriver import WebDriver
-from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from extra_functions import clean_download_folder
 from config import URL_BANK_MAIN, BANK_USER, BANK_PASSWORD, BANK_PATH, URL_BANK_CUENTAS
+
+clean_download_folder(BANK_PATH)
 
 
 def close_modal_if_present(driver, timeout=5):

@@ -1,7 +1,19 @@
+import os
 import re
 import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.styles import PatternFill
+
+
+def clean_download_folder(download_folder):
+    try:
+        for filename in os.listdir(download_folder):
+            file_path = os.path.join(download_folder, filename)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+        print(f"✅ Download folder cleaned: {download_folder}")
+    except Exception as e:
+        print(f"❌ Error cleaning folder: {e}")
 
 
 def select_month(number):

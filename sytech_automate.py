@@ -47,6 +47,7 @@ chrome_options.add_argument("--force-app-mode")
 chrome_options.add_argument("--disable-site-isolation-trials")
 chrome_options.add_argument("--new-window")
 chrome_options.add_argument("--start-maximized")
+chrome_options.add_argument("--headless=new")
 
 # Start Chrome and open Sytech
 driver = webdriver.Chrome(options=chrome_options)

@@ -1,8 +1,3 @@
-# 1️⃣ Save commands in my_script.sh
-# 2️⃣ Make it executable (chmod +x my_script.sh)
-# 3️⃣ Run it with ./my_script.sh
-# 4️⃣ (Optional) Move it to /usr/local/bin/ for quick access
-
 echo "🚀 Starting Discobolo Roadmap..."
 
 # Step 1: Checking G accessibility
@@ -62,27 +57,26 @@ if [ $? -ne 0 ]; then
 fi
 
 # Step 7: Morosos Report
-echo "Do you want to create morosos report? (y/n)"
-read -r user_input
+# echo "Do you want to create morosos report? (y/n)"
+# read -r user_input
 
-if [ "$user_input" = "y" ] || [ "$user_input" = "Y" ]; then
-    echo "🔹🔹🔹🔹🔹🔹🔹 Creating Morosos file🔹🔹🔹🔹🔹🔹🔹"
-    python3 morosos_download.py
+# if [ "$user_input" = "y" ] || [ "$user_input" = "Y" ]; then
+echo "🔹🔹🔹🔹🔹🔹🔹 Creating Morosos file🔹🔹🔹🔹🔹🔹🔹"
+python3 morosos_download.py
 
-    if [ $? -ne 0 ]; then
-        echo "❌ Error running morosos_daily_download.py"
-        exit 1
-    fi
-    echo "  ✅ Morosos report successfully downloaded."
-
-    echo "🔹🔹🔹🔹🔹🔹🔹 Updating Morosos Main file🔹🔹🔹🔹🔹🔹🔹"
-    python3 morosos_update.py
-
-    if [ $? -ne 0 ]; then
-        echo "❌ Error running morosos_update.py"
-        exit 1
-    fi
-else
-    echo " ❌ Morosos file creation skipped."
+if [ $? -ne 0 ]; then
+    echo "❌ Error running morosos_download.py"
+    exit 1
 fi
+
+echo "🔹🔹🔹🔹🔹🔹🔹 Updating Morosos Main file🔹🔹🔹🔹🔹🔹🔹"
+python3 morosos_update.py
+
+if [ $? -ne 0 ]; then
+    echo "❌ Error running morosos_update.py"
+    exit 1
+fi
+# else
+#     echo " ❌ Morosos file creation skipped."
+# fi
 echo "✅ Roadmap execution completed!"

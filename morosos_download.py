@@ -2,6 +2,7 @@ import os
 import time
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from extra_functions import clean_download_folder
 from config import MOROSOS_DOWNLOAD, SYTECH_USER, SYTECH_PASSWORD, R10240, URL_SYTECH_MAIN
 
 
@@ -37,17 +38,6 @@ for handle in driver.window_handles:
         driver.switch_to.window(handle)
         driver.close()
 driver.switch_to.window(original_window)
-
-
-def clean_download_folder(download_folder):
-    try:
-        for filename in os.listdir(download_folder):
-            file_path = os.path.join(download_folder, filename)
-            if os.path.isfile(file_path):
-                os.remove(file_path)
-        print(f"✅ Download folder cleaned: {download_folder}")
-    except Exception as e:
-        print(f"❌ Error cleaning folder: {e}")
 
 
 def morosos_report(file):
@@ -93,6 +83,7 @@ def morosos_report(file):
                 os.remove(new_path)
 
             os.rename(old_path, new_path)
+            print("  ✅ Morosos report successfully downloaded.")
         else:
             print("⚠️ Downloaded file not found for renaming.")
     else:
