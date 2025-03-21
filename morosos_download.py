@@ -12,6 +12,7 @@ prefs = {
 }
 chrome_options.add_experimental_option("prefs", prefs)
 chrome_options.add_argument("--start-maximized")
+chrome_options.add_argument("--headless=new")
 driver = webdriver.Chrome(options=chrome_options)
 driver.execute_cdp_cmd("Page.setDownloadBehavior", {
     "behavior": "allow",

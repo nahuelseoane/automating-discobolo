@@ -1,7 +1,5 @@
 #!/bin/bash
 touch /tmp/roadmap_ran.txt
-
-echo "[$(date)] Roadmap script STARTED" >> /home/jotaene/PROYECTOS/AutoDiscoEmails/roadmap.log
 cd /home/jotaene/PROYECTOS/AutoDiscoEmails/
 source venv/bin/activate
 echo "[$(date)] Script started" >> ./roadmap.log

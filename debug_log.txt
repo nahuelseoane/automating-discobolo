@@ -1,0 +1,9 @@
+✅ Download folder cleaned: ${BASE_PATH}/${YEAR}/descarga_banco
+Running from cron...
+Python: /home/jotaene/PROYECTOS/AutoDiscoEmails/venv/bin/python3
+PWD: /home/jotaene/PROYECTOS/AutoDiscoEmails
+UserDataDir: /tmp/tmplsctws6v
+🚨 Using temporary Chrome profile: /tmp/tmplsctws6v
+Trying to click login button
+  ✅ Logout successfully
+  ✅ Selenium closed.

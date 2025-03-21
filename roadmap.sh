@@ -1,5 +1,5 @@
 echo "🚀 Starting Discobolo Roadmap..."
-
+printenv > /home/jotaene/PROYECTOS/AutoDiscoEmails/cron_env.log
 # Step 1: Checking G accessibility
 echo "🔹🔹🔹🔹🔹🔹🔹 Running checkup🔹🔹🔹🔹🔹🔹🔹 "
 ./check_and_remount.sh

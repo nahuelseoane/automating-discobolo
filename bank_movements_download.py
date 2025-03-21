@@ -1,11 +1,15 @@
 import os
 import time
+import sys
+import shutil
+import tempfile
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from extra_functions import clean_download_folder
 from config import URL_BANK_MAIN, BANK_USER, BANK_PASSWORD, BANK_PATH, URL_BANK_CUENTAS
+
 
 clean_download_folder(BANK_PATH)
 
@@ -18,7 +22,7 @@ def close_modal_if_present(driver, timeout=5):
         # x
         # <button aria-disabled="false" type="button" aria-label="Cerrar." class="btn btn-link-primary btn focusMouse"> <svg data-testid="cerrar-icon" width="13px" height="13px" xmlns="http://www.w3.org/2000/svg" class="svg-icon svg-input-white" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 13 13" aria-hidden="true"><path xmlns="http://www.w3.org/2000/svg" d="M12.2763 1.9024C12.6472 1.54696 12.6472 0.954113 12.2763 0.598673C11.9271 0.263994 11.3761 0.263994 11.0269 0.598673L7.1186 4.34414C6.76063 4.6872 6.1959 4.6872 5.83793 4.34414L1.92961 0.598672C1.58038 0.263993 1.02944 0.263994 0.680205 0.598673C0.309311 0.954112 0.309312 1.54696 0.680205 1.9024L4.47613 5.54016C4.8563 5.90449 4.8563 6.51218 4.47613 6.87651L0.680204 10.5143C0.309311 10.8697 0.309311 11.4626 0.680205 11.818C1.02944 12.1527 1.58038 12.1527 1.92961 11.818L5.83793 8.07252C6.1959 7.72947 6.76063 7.72947 7.1186 8.07252L11.0269 11.818C11.3761 12.1527 11.9271 12.1527 12.2763 11.818C12.6472 11.4626 12.6472 10.8697 12.2763 10.5143L8.48039 6.87651C8.10022 6.51218 8.10022 5.90449 8.4804 5.54016L12.2763 1.9024Z" fill="svg-input-white"></path></svg></button>
     except Exception as e:
-        print("  ✅ No modal popup found. Continuing...")
+        print(f"  ✅ No modal popup found. Continuing... {e}")
 
 
 def get_last_downloaded_file(download_dir):
@@ -51,8 +55,17 @@ chrome_options.add_argument("--disable-site-isolation-trials")
 chrome_options.add_argument("--new-window")
 chrome_options.add_argument("--start-maximized")
 chrome_options.add_argument("--safebrowsing-disable-download-protection")
-# chrome_options.add_argument("--headless")
-# chrome_options.add_argument("--headless=new")
+# Crontab
+chrome_options.add_argument("--headless=new")
+chrome_options.add_argument("--disable-gpu")
+chrome_options.add_argument("--disable-dev-shm-usage")
+chrome_options.add_argument("--no-sandbox")
+chrome_options.add_argument("--enable-logging")
+chrome_options.add_argument("--v=1")
+
+# for Crontab
+temp_user_data_dir = tempfile.mkdtemp()
+# chrome_options.add_argument(f'--user-data-dir={temp_user_data_dir}')
 
 driver = webdriver.Chrome(options=chrome_options)
 
@@ -76,14 +89,25 @@ try:
         By.XPATH, '/html/body/div[3]/div/div/div/div/div/div[2]/div/main/div/div/div/div[2]/form/div[4]/button[1]').click()
 
     # Selecting user
-    WebDriverWait(driver, 10).until(EC.presence_of_element_located(
+    choosing_user = WebDriverWait(driver, 10).until(EC.presence_of_element_located(
         (By.XPATH, '//*[@id="radioButtonEmpresa0"]')
-    )).click()
-    # Button 'Continuar'
-    driver.find_element(
-        By.XPATH, '/html/body/div[3]/div/div/div/div/div/div[2]/div/main/div/div/div[2]/div/div[2]/button').click()
-    time.sleep(5)
+    ))
+    driver.execute_script("arguments[0].scrollIntoView(true);", choosing_user)
+    time.sleep(1)
+    choosing_user.click()
 
+    # Button 'Continuar'
+    WebDriverWait(driver, 20).until(
+        EC.invisibility_of_element_located((By.ID, "globalLoading"))
+    )
+    login_btn = WebDriverWait(driver, 10).until(
+        EC.element_to_be_clickable((By.XPATH, '/html/body/div[3]/div/div/div/div/div/div[2]/div/main/div/div/div[2]/div/div[2]/button')))
+    # login_btn = driver.fin_element(By.XPATH, '/html/body/div[3]/div/div/div/div/div/div[2]/div/main/div/div/div[2]/div/div[2]/button')
+
+    driver.execute_script("arguments[0].click();", login_btn)
+    print("Trying to click login button")
+    time.sleep(2)
+    # driver.save_screenshot("headless_debug.png")
     # Skipping Model Pop-up
     close_modal_if_present(driver)
     time.sleep(2)
@@ -126,11 +150,12 @@ except Exception as e:
 
 finally:
     try:
-        logout_button = driver.find_element(
-            By.CSS_SELECTOR, '#root > div > div > div > div > div > div:nth-child(1) > div > header > div > div > div > div.box.col-2.col-md-6 > div > button')
+        logout_button = WebDriverWait(driver, 5).until(EC.element_to_be_clickable((
+            By.CSS_SELECTOR, '#root > div > div > div > div > div > div:nth-child(1) > div > header > div > div > div > div.box.col-2.col-md-6 > div > button')))
         logout_button.click()
         print("  ✅ Logout successfully")
+        shutil.rmtree(temp_user_data_dir)
+        driver.quit()
+        print("  ✅ Selenium closed.")
     except Exception as e:
         print(f"  ⚠️ Logout failed or already logged out. {e}")
-driver.quit()
-print("  ✅ Selenium closed.")
