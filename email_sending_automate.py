@@ -1,6 +1,7 @@
 import os
 import smtplib
 import pandas as pd
+from datetime import datetime
 from extra_functions import extract_operation_number
 from openpyxl import load_workbook
 from email.mime.multipart import MIMEMultipart
@@ -38,7 +39,9 @@ def send_email(user, recipient_email, pdf_path):
 
     # Email body text
     if first_name:
-        body = f'Buenos días {first_name}:\n\nRecibimos su transferencia.\nAdjuntamos el recibo correspondiente.\n\nSaludos!'
+        greetings = "Buenos días" if datetime.now().strftime(
+            "%Y:%M") < "14:00" else "Buenas tardes"
+        body = f'{greetings} {first_name}:\n\nRecibimos su transferencia.\nAdjuntamos el recibo correspondiente.\n\nSaludos!'
         msg.attach(MIMEText(body, 'plain'))
     else:
         print(f"❌ Error extracting First Name from {user}.")
