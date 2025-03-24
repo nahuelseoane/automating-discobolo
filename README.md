@@ -28,8 +28,6 @@ automating-discobolo/
 ├── venv/                        # Virtual environment
 ├── pyproject.toml               # CLI tool packaging file
 ├── README.md
-
-
 ```
 
 ---
@@ -48,39 +46,41 @@ python3 -m venv venv
 source venv/bin/activate
 ```
 
-### 3️⃣ Install dependencies
+### 3️⃣ Install project and dependencies
 ```bash
 pip install -r config/requirements.txt
 pip install --editable .
 ```
 
-🚀 Using the CLI
-After activating your virtual environment, you can use the discobolo command from anywhere inside the environment.
+---
 
-Available commands:
-bash
-Copy
-Edit
+## 🚀 Using the CLI
+
+After activating your virtual environment, you can use the `discobolo` command from anywhere inside the environment.
+
+### Available commands:
+```bash
 discobolo --help
 discobolo run                    # Full automation pipeline
 discobolo send-emails           # Run only email sending
 discobolo update-transfers      # Update Excel with bank transfers
 discobolo morosos --download    # Download Morosos report
 discobolo morosos --update      # Update Morosos main file
-⚠ You must activate the virtual environment first:
+```
 
-bash
-Copy
-Edit
+> ⚠ You must activate the virtual environment first:
+```bash
 source venv/bin/activate
-📌 You should run commands from inside the project folder to ensure relative paths work correctly.
+```
 
-📥 Configuration via .env
-Configure sensitive and dynamic variables in a .env file at the root:
+> 📌 You should run commands from inside the project folder to ensure relative paths work correctly.
 
-dotenv
-Copy
-Edit
+---
+
+## 📥 Configuration via `.env`
+
+Configure sensitive and dynamic variables in a `.env` file at the root:
+```dotenv
 # Email Credentials
 EMAIL_USER=your_email@gmail.com
 EMAIL_PASSWORD=your_app_password
@@ -98,15 +98,16 @@ SYTECH_USER=your_sytech_user
 SYTECH_PASSWORD=your_sytech_password
 BANK_USER=your_bank_user
 BANK_PASSWORD=your_bank_password
-📝 Notes
-Don’t commit your .env file — it’s already ignored via .gitignore.
+```
 
-Use config.py to load and centralize environment variables.
+---
 
-Keep all command executions within the project folder for best path resolution.
+## 📝 Notes
+- Don’t commit your `.env` file — it’s already ignored via `.gitignore`.
+- Use `config.py` to load and centralize environment variables.
+- Keep all command executions within the project folder for best path resolution.
 
-✅ Author
-Made with 💙 by @Nahuelseoane
+---
 
-
-
+## ✅ Author
+Made with 💙 by [@Nahuelseoane](https://github.com/Nahuelseoane)
