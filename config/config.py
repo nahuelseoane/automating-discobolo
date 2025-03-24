@@ -16,7 +16,7 @@ MONTH_NUMBER = int(os.getenv("MONTH_NUMBER"))
 MONTH = select_month(MONTH_NUMBER)
 BASE_PATH = os.getenv("BASE_PATH")
 
-EMAILS_FILE = os.path.join(BASE_PATH, YEAR, "EmailSocios.xlsx")
+EMAILS_FILE = os.path.join(BASE_PATH, YEAR, "emails_socios.xlsx")
 PAYMENTS_PATH = os.path.join(BASE_PATH, YEAR, f"{MONTH_NUMBER} {MONTH} {YEAR}")
 TRANSFER_FILE = os.path.join(BASE_PATH, YEAR, f"Transferencias {YEAR}.xlsx")
 BANK_PATH = os.path.join(BASE_PATH, YEAR, "descarga_banco")
