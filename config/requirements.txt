@@ -4,3 +4,4 @@ openpyxl
 selenium
 requests
 python-dotenv
+typer[all]

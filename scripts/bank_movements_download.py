@@ -101,12 +101,9 @@ try:
     )
     login_btn = WebDriverWait(driver, 10).until(
         EC.element_to_be_clickable((By.XPATH, '/html/body/div[3]/div/div/div/div/div/div[2]/div/main/div/div/div[2]/div/div[2]/button')))
-    # login_btn = driver.fin_element(By.XPATH, '/html/body/div[3]/div/div/div/div/div/div[2]/div/main/div/div/div[2]/div/div[2]/button')
-
     driver.execute_script("arguments[0].click();", login_btn)
-    print("Trying to click login button")
     time.sleep(2)
-    # driver.save_screenshot("headless_debug.png")
+
     # Skipping Model Pop-up
     close_modal_if_present(driver)
     time.sleep(2)
