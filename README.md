@@ -13,16 +13,35 @@ This project is designed to simplify daily tasks and improve traceability for pa
 ## 📁 Project Structure
 
 ```
-AutoDiscoEmails/
-├── email_sending_automate.py     # Sends personalized emails with receipts
-├── sytechAutomate.py             # Automates payment entry in Sytech system
-├── update_bank_file.py          # Updates master Excel with new bank transfers
-├── .env                          # Stores environment-sensitive variables
-├── config.py                     # Loads and builds key paths dynamically
-├── backups/                     # Backup copies of master Excel
-├── pdfs/                        # Directory where payment receipts are downloaded
-├── EmailSocios.xlsx             # Emails and user info by DNI
-├── Transferencias ${YEAR}.xlsx     # Main yearly Excel file
+automating-discobolo/
+├── bin/                         # Main execution scripts
+│   ├── run_discobolo_pipeline.sh  # Entry point script
+│   ├── automation_pipeline.sh     # Orchestrates full process
+├── config/                      # Configuration files
+│   ├── config.py                 # Global settings
+│   ├── requirements.txt          # Dependencies list
+├── data/                        # Data storage
+├── logs/                        # Log files
+│   ├── cron_env.log              # Environment logs
+│   ├── debug_log.txt             # Debugging logs
+│   ├── roadmap.log               # Main process log
+├── scripts/                     # All automation scripts
+│   ├── backup_files.py
+│   ├── bank_movements_download.py
+│   ├── check_and_remount.sh
+│   ├── email_sending_automate.py
+│   ├── extra_functions.py
+│   ├── jefe_de_grupo_update.py
+│   ├── morosos_download.py
+│   ├── morosos_update.py
+│   ├── payment_load_function.py
+│   ├── sytech_automate.py
+│   ├── transfer_file_update.py
+│   ├── whatsapp_automate.py
+├── venv/                        # Virtual environment
+├── .gitignore                   # Git ignored files
+├── README.md                    # Project documentation
+
 ```
 
 ---
