@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "discobolo"
+version = "0.1.0"
+description = "Automated transfers and notifications system for Discobolo"
+readme = "README.md"
+requires-python = ">=3.7"
+dependencies = [
+    "typer[all]"
+]
+
+[project.scripts]
+discobolo = "discobolo.cli:app"
+
+[tool.setuptools.packages.find]
+include = ["discobolo"]

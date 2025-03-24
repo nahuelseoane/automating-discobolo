@@ -1,6 +1,6 @@
 # 📬 Automating Discobolo - Automated Transfers & Notifications System
 
-Welcome to **AutoDiscoEmails**, a Python-based automation system built to streamline:
+Welcome to **Automating Discobolo**, a Python-based automation system built to streamline:
 - 💳 Payment data processing
 - 💾 Excel updates
 - 💌 Email notifications with payment receipts
@@ -18,29 +18,17 @@ automating-discobolo/
 │   ├── run_discobolo_pipeline.sh  # Entry point script
 │   ├── automation_pipeline.sh     # Orchestrates full process
 ├── config/                      # Configuration files
-│   ├── config.py                 # Global settings
-│   ├── requirements.txt          # Dependencies list
+│   ├── config.py
+│   └── requirements.txt
 ├── data/                        # Data storage
 ├── logs/                        # Log files
-│   ├── cron_env.log              # Environment logs
-│   ├── debug_log.txt             # Debugging logs
-│   ├── roadmap.log               # Main process log
-├── scripts/                     # All automation scripts
-│   ├── backup_files.py
-│   ├── bank_movements_download.py
-│   ├── check_and_remount.sh
-│   ├── email_sending_automate.py
-│   ├── extra_functions.py
-│   ├── jefe_de_grupo_update.py
-│   ├── morosos_download.py
-│   ├── morosos_update.py
-│   ├── payment_load_function.py
-│   ├── sytech_automate.py
-│   ├── transfer_file_update.py
-│   ├── whatsapp_automate.py
+├── scripts/                     # Supporting automation scripts
+├── discobolo/                   # Python CLI package
+│   └── cli.py                   # Main CLI logic
 ├── venv/                        # Virtual environment
-├── .gitignore                   # Git ignored files
-├── README.md                    # Project documentation
+├── pyproject.toml               # CLI tool packaging file
+├── README.md
+
 
 ```
 
@@ -50,8 +38,8 @@ automating-discobolo/
 
 ### 1️⃣ Clone the repository
 ```bash
-git clone https://github.com/YourUsername/AutoDiscoEmails.git
-cd AutoDiscoEmails
+git clone https://github.com/YourUsername/automating-discobolo.git
+cd automating-discobolo
 ```
 
 ### 2️⃣ Create and activate virtual environment
@@ -62,13 +50,37 @@ source venv/bin/activate
 
 ### 3️⃣ Install dependencies
 ```bash
-pip install -r requirements.txt
+pip install -r config/requirements.txt
+pip install --editable .
 ```
 
-### 4️⃣ Configure `.env` file
-Create a `.env` file in the root folder:
+🚀 Using the CLI
+After activating your virtual environment, you can use the discobolo command from anywhere inside the environment.
 
-```dotenv
+Available commands:
+bash
+Copy
+Edit
+discobolo --help
+discobolo run                    # Full automation pipeline
+discobolo send-emails           # Run only email sending
+discobolo update-transfers      # Update Excel with bank transfers
+discobolo morosos --download    # Download Morosos report
+discobolo morosos --update      # Update Morosos main file
+⚠ You must activate the virtual environment first:
+
+bash
+Copy
+Edit
+source venv/bin/activate
+📌 You should run commands from inside the project folder to ensure relative paths work correctly.
+
+📥 Configuration via .env
+Configure sensitive and dynamic variables in a .env file at the root:
+
+dotenv
+Copy
+Edit
 # Email Credentials
 EMAIL_USER=your_email@gmail.com
 EMAIL_PASSWORD=your_app_password
@@ -80,53 +92,21 @@ YEAR=${YEAR}
 MONTH_NUMBER=3
 BASE_PATH=/mnt/g/.../TRANSFERENCIAS
 TRANSFER_FILE=Transferencias ${YEAR}.xlsx
-```
 
----
+# Sytech / Bank login and URLs
+SYTECH_USER=your_sytech_user
+SYTECH_PASSWORD=your_sytech_password
+BANK_USER=your_bank_user
+BANK_PASSWORD=your_bank_password
+📝 Notes
+Don’t commit your .env file — it’s already ignored via .gitignore.
 
-## 🧠 How It Works
+Use config.py to load and centralize environment variables.
 
-### 📤 `email_sending_automate.py`
-- Reads Excel file
-- Retrieves email from `EmailSocios.xlsx` using DNI match
-- Attaches PDF receipt using unique transaction number
-- Updates status in Excel (`Cargado` column) and highlights Importe cell
+Keep all command executions within the project folder for best path resolution.
 
-### 🏦 `update_bank_file.py`
-- Reads daily bank movements Excel
-- Filters only new entries by comparing last sequence number
-- Cleans columns and appends new records in correct format to monthly sheet
-- Backs up master file automatically
+✅ Author
+Made with 💙 by @Nahuelseoane
 
-### 🤖 `sytechAutomate.py`
-- Launches Chrome, logs in Sytech
-- Searches client by last name or DNI
-- Enters payment details, saves receipt
-- Stores receipt with name format (e.g., `NroOperacion_User.pdf`)
 
----
-
-## 📥 Download Paths
-All receipts are saved automatically to:
-```
-{BASE_PATH}/{YEAR}/{MONTH_NUMBER} {MONTH} {YEAR}/
-```
-You can configure this dynamically using `.env`.
-
----
-
-## 📝 Notes
-- Make sure your Google Drive folders are mounted correctly in WSL2.
-- Avoid pushing `.env` to GitHub — it's already listed in `.gitignore`.
-- Use `config.py` to centralize variables and logic.
-
----
-
-## 💬 Support
-For help or suggestions, open an issue or contact the project maintainer.
-
----
-
-## ✅ Author
-Made with 💙 by [@Nahuelseoane](https://github.com/Nahuelseoane)
 
