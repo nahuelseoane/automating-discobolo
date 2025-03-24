@@ -6,24 +6,25 @@ load_dotenv()
 
 # EMAIL SETTINGS
 SMTP_SERVER = os.getenv("SMTP_SERVER")
-SMTP_PORT = int(os.getenv("SMTP_PORT"))
+SMTP_PORT = int(os.getenv("SMTP_PORT", ${SMTP_PORT}))
 EMAIL_USER = os.getenv("EMAIL_USER")
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 
-# PATH VARIABLES
+# PATH SETTINGS
 YEAR = os.getenv("YEAR")
-TRANSFER_FILE = os.getenv("TRANSFER_FILE")
-BASE_PATH = os.getenv("BASE_PATH")
 MONTH_NUMBER = int(os.getenv("MONTH_NUMBER"))
 MONTH = select_month(MONTH_NUMBER)
-EMAILS_FILE = f"{BASE_PATH}/{YEAR}/EmailSocios.xlsx"
-PAYMENTS_PATH = f"{BASE_PATH}/{YEAR}/{MONTH_NUMBER} {MONTH} {YEAR}"
-TRANSFER_FILE = f"{BASE_PATH}/{YEAR}/Transferencias {YEAR}.xlsx"
-BANK_PATH = f"{BASE_PATH}/{YEAR}/descarga_banco"
-BANK_FILE = f"{BANK_PATH}/movimientos_banco.xlsx"
-MOROSOS_DAILY = f"{BASE_PATH}/Morosos/descarga_reporte/reporte_morosos.xlsx"
-MOROSOS_MAIN = f"{BASE_PATH}/Morosos/Morosos {YEAR}.xlsx"
-MOROSOS_DOWNLOAD = f"{BASE_PATH}/Morosos/descarga_reporte"
+BASE_PATH = os.getenv("BASE_PATH")
+
+EMAILS_FILE = os.path.join(BASE_PATH, YEAR, "EmailSocios.xlsx")
+PAYMENTS_PATH = os.path.join(BASE_PATH, YEAR, f"{MONTH_NUMBER} {MONTH} {YEAR}")
+TRANSFER_FILE = os.path.join(BASE_PATH, YEAR, f"Transferencias {YEAR}.xlsx")
+BANK_PATH = os.path.join(BASE_PATH, YEAR, "descarga_banco")
+BANK_FILE = os.path.join(BASE_PATH, "movimientos_banco.xlsx")
+MOROSOS_DOWNLOAD = os.path.join(BASE_PATH, "Morosos", "descarga_reporte")
+MOROSOS_DAILY = os.path.join(MOROSOS_DOWNLOAD, "reporte_morosos.xlsx")
+MOROSOS_MAIN = os.path.join(BASE_PATH, "Morosos", f"Morosos {YEAR}.xlsx")
+
 R10240 = os.getenv("R10240")
 SHEET_NAME = MONTH
 
