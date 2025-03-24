@@ -13,6 +13,21 @@ def run():
 
 
 @app.command()
+def transfers(download: bool = typer.Option(False), update: bool = typer.Option(False)):
+    """Download and/or update Bank Movements"""
+
+    if download:
+        typer.echo("📥 Downloading bank movements")
+        subprocess.run(
+            ["./venv/bin/python", "scripts/bank_movements_download.py"])
+
+    if update:
+        typer.echo("📝 Updating transfer file.")
+        subprocess.run(
+            ["./venv/bin/python", "scripts/jefe_de_grupo_update.py"])
+
+
+@app.command()
 def send_emails():
     """Send payment emails only"""
     typer.echo("✉️ Sending emails...")
@@ -22,7 +37,7 @@ def send_emails():
 @app.command()
 def update_transfer():
     """Update main transfer Excel with new data"""
-    typer.echo("📥 Updating transfer file...")
+    typer.echo("📝 Updating transfer file...")
     subprocess.run(["./venv/bin/python", "scripts/transfer_file_update"])
 
 
