@@ -2,14 +2,14 @@ import os
 import time
 import traceback
 import pandas as pd
-from extra_functions import update_loaded_status, extract_operation_number, extract_date, sanitize_filename, extract_deposito
+from scripts.extra_functions import update_loaded_status, extract_operation_number, extract_date, sanitize_filename, extract_deposito
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
-from config import URL_SYTECH_COBRANZAS
+from config.config import URL_SYTECH_COBRANZAS
 
 
 def payment_load(df, driver, download_root, excel_file, sheet_name, year):

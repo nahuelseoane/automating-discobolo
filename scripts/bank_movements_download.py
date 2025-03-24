@@ -1,14 +1,13 @@
 import os
 import time
-import sys
 import shutil
 import tempfile
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from extra_functions import clean_download_folder
-from config import URL_BANK_MAIN, BANK_USER, BANK_PASSWORD, BANK_PATH, URL_BANK_CUENTAS
+from scripts.extra_functions import clean_download_folder
+from config.config import URL_BANK_MAIN, BANK_USER, BANK_PASSWORD, BANK_PATH, URL_BANK_CUENTAS
 
 
 clean_download_folder(BANK_PATH)

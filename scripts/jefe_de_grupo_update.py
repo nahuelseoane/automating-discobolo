@@ -1,7 +1,7 @@
 import pandas as pd
 from openpyxl import load_workbook
-from extra_functions import extract_dni, filter_positive_payments
-from config import TRANSFER_FILE, SHEET_NAME, EMAILS_FILE
+from scripts.extra_functions import extract_dni, filter_positive_payments
+from config.config import TRANSFER_FILE, SHEET_NAME, EMAILS_FILE
 
 df, transfer = filter_positive_payments(TRANSFER_FILE, SHEET_NAME)
 df_emails = pd.read_excel(EMAILS_FILE, sheet_name=SHEET_NAME)

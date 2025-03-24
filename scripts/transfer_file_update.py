@@ -1,7 +1,7 @@
 import pandas as pd
 from openpyxl import load_workbook
 from datetime import datetime
-from config import TRANSFER_FILE, BANK_FILE
+from config.config import TRANSFER_FILE, BANK_FILE
 
 
 # Get current month index (1 = January, 2 = February, ...)

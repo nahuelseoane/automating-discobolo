@@ -3,7 +3,7 @@ from datetime import datetime
 from openpyxl import load_workbook
 from openpyxl.styles import Font, PatternFill
 from openpyxl.utils import get_column_letter
-from config import MOROSOS_DAILY, MOROSOS_MAIN, MONTH
+from config.config import MOROSOS_DAILY, MOROSOS_MAIN, MONTH
 
 
 df_daily = pd.read_excel(MOROSOS_DAILY, skiprows=5, engine="openpyxl")

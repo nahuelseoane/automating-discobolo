@@ -2,8 +2,8 @@ import os
 import time
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from extra_functions import clean_download_folder
-from config import MOROSOS_DOWNLOAD, SYTECH_USER, SYTECH_PASSWORD, R10240, URL_SYTECH_MAIN
+from scripts.extra_functions import clean_download_folder
+from config.config import MOROSOS_DOWNLOAD, SYTECH_USER, SYTECH_PASSWORD, R10240, URL_SYTECH_MAIN
 
 
 chrome_options = webdriver.ChromeOptions()

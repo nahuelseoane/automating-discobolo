@@ -1,10 +1,10 @@
 import time
 import pandas as pd
-from extra_functions import filter_positive_payments
+from scripts.extra_functions import filter_positive_payments
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from payment_load_function import payment_load
-from config import TRANSFER_FILE, SHEET_NAME, PAYMENTS_PATH, SYTECH_USER, SYTECH_PASSWORD, YEAR, URL_SYTECH_MAIN
+from scripts.payment_load_function import payment_load
+from config.config import TRANSFER_FILE, SHEET_NAME, PAYMENTS_PATH, SYTECH_USER, SYTECH_PASSWORD, YEAR, URL_SYTECH_MAIN
 
 df, df_filtered = filter_positive_payments(TRANSFER_FILE, SHEET_NAME)
 # Counting concepts

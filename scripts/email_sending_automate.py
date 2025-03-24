@@ -2,12 +2,12 @@ import os
 import smtplib
 import pandas as pd
 from datetime import datetime
-from extra_functions import extract_operation_number
+from scripts.extra_functions import extract_operation_number
 from openpyxl import load_workbook
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.application import MIMEApplication
-from config import TRANSFER_FILE, SHEET_NAME, EMAILS_FILE, EMAIL_USER, SMTP_SERVER, SMTP_PORT, EMAIL_PASSWORD, PAYMENTS_PATH
+from config.config import TRANSFER_FILE, SHEET_NAME, EMAILS_FILE, EMAIL_USER, SMTP_SERVER, SMTP_PORT, EMAIL_PASSWORD, PAYMENTS_PATH
 
 # Load Excel files
 df_main = pd.read_excel(TRANSFER_FILE, sheet_name=SHEET_NAME)

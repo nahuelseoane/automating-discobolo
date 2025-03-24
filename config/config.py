@@ -1,6 +1,6 @@
 import os
 from dotenv import load_dotenv
-from extra_functions import select_month
+from scripts.extra_functions import select_month
 
 load_dotenv()
 
