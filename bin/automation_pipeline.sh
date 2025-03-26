@@ -2,6 +2,11 @@
 
 echo "🚀 Starting Discobolo Automation Pipeline..."
 
+
+# Fix import errors
+export PYTHONPATH=$(pwd)
+
+
 # Export current environment info
 printenv > ./logs/cron_env.log
 

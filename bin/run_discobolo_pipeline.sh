@@ -1,5 +1,5 @@
 #!/bin/bash
-
+echo "Reached discobolo execution point" >> ./logs/automation_pipeline.log
 # Create temp lock/trace file
 touch /tmp/roadmap_ran.txt
 
@@ -8,6 +8,9 @@ cd /home/jotaene/proyectos/automating-discobolo
 
 # Activate virtual environment
 source venv/bin/activate
+
+echo "[$(date)] Python used:" >> ./logs/automation_pipeline.log
+which python >> ./logs/automation_pipeline.log
 
 # Log start timestamp
 echo "[$(date)] Script started" >> ./logs/automation_pipeline.log
