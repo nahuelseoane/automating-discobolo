@@ -24,21 +24,28 @@ def transfers(download: bool = typer.Option(False), update: bool = typer.Option(
     if update:
         typer.echo("📝 Updating transfer file.")
         subprocess.run(
-            ["./venv/bin/python", "scripts/jefe_de_grupo_update.py"])
+            ["./venv/bin/python", "scripts/transfer_file_update.py"])
 
 
 @app.command()
-def send_emails():
+def jefe_de_grupo():
+    """Update column 'Jefe de Grupo' in transfers file."""
+    typer.echo("📝 Updating 'Jefe de Grupo' in transfer file...")
+    subprocess.run(["./venv/bin/python", "scripts/jefe_de_grupo_update.py"])
+
+
+@app.command()
+def emails():
     """Send payment emails only"""
     typer.echo("✉️ Sending emails...")
     subprocess.run(["./venv/bin/python", "scripts/email_sending_automate.py"])
 
 
 @app.command()
-def update_transfer():
-    """Update main transfer Excel with new data"""
-    typer.echo("📝 Updating transfer file...")
-    subprocess.run(["./venv/bin/python", "scripts/transfer_file_update"])
+def sytech():
+    """Uploading user's payments into Sytech system."""
+    typer.echo("💳 Uploading payments...")
+    subprocess.run(["./venv/bin/python", "scripts/sytech_automate.py"])
 
 
 @app.command()
