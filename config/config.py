@@ -22,11 +22,18 @@ PAYMENTS_PATH = os.path.join(BASE_PATH, YEAR, f"{MONTH_NUMBER} {MONTH} {YEAR}")
 TRANSFER_FILE = os.path.join(BASE_PATH, YEAR, f"Transferencias {YEAR}.xlsx")
 BANK_PATH = os.path.join(BASE_PATH, YEAR, "descarga_banco")
 BANK_FILE = os.path.join(BANK_PATH, "movimientos_banco.xlsx")
-MOROSOS_DOWNLOAD = os.path.join(BASE_PATH, "Morosos", "descarga_reporte")
-MOROSOS_DAILY = os.path.join(MOROSOS_DOWNLOAD, "reporte_morosos.xlsx")
-MOROSOS_MAIN = os.path.join(BASE_PATH, "Morosos", f"Morosos {YEAR}.xlsx")
-
+MOROSOS_PATH = os.path.join(BASE_PATH, "Morosos")
+MOROSOS_DOWNLOAD = os.path.join(MOROSOS_PATH, "descarga_reporte")
+MOROSOS_REPORT = os.path.join(MOROSOS_DOWNLOAD, "reporte_morosos.xlsx")
+MOROSOS_MAIN = os.path.join(MOROSOS_PATH, f"Morosos {YEAR}.xlsx")
+RECURRENTES_PATH = os.path.join(BASE_PATH, "Recurrentes")
+RECURRENTES_DOWNLOAD = os.path.join(
+    RECURRENTES_PATH, "descarga_reporte")
+RECURRENTES_REPORT = os.path.join(
+    RECURRENTES_DOWNLOAD, "rockhopper_R10246.xlsx")
+RECURRENTES_MAIN = os.path.join(RECURRENTES_PATH, f"Recurrentes {YEAR}.xlsx")
 R10240 = os.getenv("R10240")
+R10246 = os.getenv("R10246")
 SHEET_NAME = MONTH
 
 # SYTECH

@@ -60,5 +60,18 @@ def morosos(download: bool = typer.Option(False), update: bool = typer.Option(Fa
         subprocess.run(["./venv/bin/python", "scripts/morosos_update.py"])
 
 
+@app.command()
+def recurrentes(download: bool = typer.Option(False), update: bool = typer.Option(False)):
+    """Download and/or update Recurrentes file"""
+    if download:
+        typer.echo("📥 Downloading 'Recurrentes' report...")
+        subprocess.run(
+            ["./venv/bin/python", "scripts/recurrentes_download.py"])
+
+    if update:
+        typer.echo("📝 Updating 'Recurrentes' file...")
+        subprocess.run(["./venv/bin/python", "scripts/recurrentes_update.py"])
+
+
 if __name__ == '__main__':
     app()
