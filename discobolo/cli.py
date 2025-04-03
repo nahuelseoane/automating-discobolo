@@ -13,25 +13,23 @@ def run():
 
 
 @app.command()
-def transfers(download: bool = typer.Option(False), update: bool = typer.Option(False)):
+def transfers(download: bool = typer.Option(False), update1: bool = typer.Option(False), update2: bool = typer.Option(False)):
     """Download and/or update Bank Movements"""
 
     if download:
         typer.echo("📥 Downloading bank movements")
         subprocess.run(
-            ["./venv/bin/python", "scripts/bank_movements_download.py"])
+            ["./venv/bin/python", "scripts/transfers_download.py"])
 
-    if update:
-        typer.echo("📝 Updating transfer file.")
+    if update1:
+        typer.echo("📝 Updating transfer file with data.")
         subprocess.run(
-            ["./venv/bin/python", "scripts/transfer_file_update.py"])
+            ["./venv/bin/python", "scripts/transfers_update.py"])
 
-
-@app.command()
-def jefe_de_grupo():
-    """Update column 'Jefe de Grupo' in transfers file."""
-    typer.echo("📝 Updating 'Jefe de Grupo' in transfer file...")
-    subprocess.run(["./venv/bin/python", "scripts/jefe_de_grupo_update.py"])
+    if update2:
+        typer.echo("📝 Updating transfer file with 'Jefe de Grupo'.")
+        subprocess.run(
+            ["./venv/bin/python", "scripts/transfers_update_2.py"])
 
 
 @app.command()

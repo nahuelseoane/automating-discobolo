@@ -15,10 +15,10 @@ concept_counts = df_filtered['Concepto_grouped'].value_counts()
 concept_counts_dict = concept_counts.to_dict()
 print("   🔢 Counting concepts:\n",
       f"   🔸Total: {len(df_filtered)}\n",
-      f"   🔸Cuota: {concept_counts_dict['CUOTA']}\n",
-      f"   🔸Tenis: {concept_counts_dict['TENIS']}\n",
-      f"   🔸Escuelita: {concept_counts_dict['ESCUELITA']}\n",
-      f"   🔸Otros: {concept_counts_dict['OTROS']}\n"
+      f"   🔸Cuota: {concept_counts_dict.get('CUOTA')}\n",
+      f"   🔸Tenis: {concept_counts_dict.get('TENIS')}\n",
+      f"   🔸Escuelita: {concept_counts_dict.get('ESCUELITA')}\n",
+      f"   🔸Otros: {concept_counts_dict.get('OTROS')}\n"
       )
 
 # ✅ Convert to the correct format

@@ -24,25 +24,25 @@ fi
 
 # Step 3: Download Bank Movements
 echo "🔹 Step 3: Downloading Bank Movements"
-python3 ./scripts/bank_movements_download.py
+python3 ./scripts/transfers_download.py
 if [ $? -ne 0 ]; then
-    echo "❌ Error running bank_movements_download.py"
+    echo "❌ Error running transfers_download.py"
     exit 1
 fi
 
 # Step 4: Transfer File Update
 echo "🔹 Step 4: Updating Transfer File"
-python3 ./scripts/transfer_file_update.py
+python3 ./scripts/transfers_update.py
 if [ $? -ne 0 ]; then
-    echo "❌ Error running transfer_file_update.py"
+    echo "❌ Error running transfers_update.py"
     exit 1
 fi
 
 # Step 5: Jefe de Grupo Update
 echo "🔹 Step 5: Updating Jefe de Grupo"
-python3 ./scripts/jefe_de_grupo_update.py
+python3 ./scripts/transfers_update_2.py
 if [ $? -ne 0 ]; then
-    echo "❌ Error running jefe_de_grupo_update.py"
+    echo "❌ Error running transfers_update_2.py"
     exit 1
 fi
 

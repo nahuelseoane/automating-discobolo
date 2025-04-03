@@ -57,6 +57,7 @@ chrome_options.add_argument("--safebrowsing-disable-download-protection")
 # Crontab
 chrome_options.add_argument("--headless=new")
 chrome_options.add_argument("--disable-gpu")
+chrome_options.add_argument('--disable-software-rasterizer')  # problems in WSL
 chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--enable-logging")
@@ -105,8 +106,8 @@ try:
     time.sleep(2)
 
     # Skipping Model Pop-up
-    close_modal_if_present(driver)
-    time.sleep(2)
+    # close_modal_if_present(driver)
+    # time.sleep(2)
 
     # Going to 'Cuentas'
     driver.get(URL_BANK_CUENTAS)

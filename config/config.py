@@ -3,6 +3,9 @@ from dotenv import load_dotenv
 from scripts.extra_functions import select_month
 
 load_dotenv()
+# MONTH VARIABLES
+MONTH_NUMBER = int(os.getenv("MONTH_NUMBER"))
+TENNIS_CLASS_FEE = 6000
 
 # EMAIL SETTINGS
 SMTP_SERVER = os.getenv("SMTP_SERVER")
@@ -12,7 +15,6 @@ EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 
 # PATH SETTINGS
 YEAR = os.getenv("YEAR")
-MONTH_NUMBER = int(os.getenv("MONTH_NUMBER"))
 MONTH = select_month(MONTH_NUMBER)
 BASE_PATH = os.getenv("BASE_PATH")
 

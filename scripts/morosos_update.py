@@ -6,7 +6,7 @@ from openpyxl.utils import get_column_letter
 from config.config import MOROSOS_REPORT, MOROSOS_MAIN, MONTH
 
 
-df_daily = pd.read_excel(MOROSOS_REPORT, skiprows=5, engine="openpyxl")
+df_daily = pd.read_excel(MOROSOS_REPORT, skiprows=6, engine="openpyxl")
 wb = load_workbook(MOROSOS_MAIN)
 
 # Checking if actual month sheet exists

@@ -1,44 +1,12 @@
 import os
 import time
-from selenium import webdriver
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.common.exceptions import TimeoutException, NoSuchElementException
+from selenium.webdriver.support import expected_conditions as EC
+from scripts.sytech_login import sytech_login
 from selenium.webdriver.common.by import By
 from scripts.extra_functions import clean_download_folder
 from config.config import MOROSOS_DOWNLOAD, SYTECH_USER, SYTECH_PASSWORD, R10240, URL_SYTECH_MAIN
-
-
-chrome_options = webdriver.ChromeOptions()
-prefs = {
-    "download.default_directory": MOROSOS_DOWNLOAD,
-}
-chrome_options.add_experimental_option("prefs", prefs)
-chrome_options.add_argument("--start-maximized")
-chrome_options.add_argument("--headless=new")
-driver = webdriver.Chrome(options=chrome_options)
-driver.execute_cdp_cmd("Page.setDownloadBehavior", {
-    "behavior": "allow",
-    "downloadPath": MOROSOS_DOWNLOAD  # ✅ Force Chrome to use the right folder
-})
-
-# Open Sytech
-driver.get(URL_SYTECH_MAIN)
-
-username_input = driver.find_element(By.ID, "user_name")
-password_input = driver.find_element(By.ID, "user_password")
-login_button = driver.find_element(
-    By.XPATH, '//*[@id="loginModal"]/div/div/div[2]/div/form/div[3]/div[2]/div/div/div[2]/button')
-
-username_input.send_keys(SYTECH_USER)
-password_input.send_keys(SYTECH_PASSWORD)
-login_button.click()
-
-original_window = driver.current_window_handle
-time.sleep(2)
-# Close extra tabs
-for handle in driver.window_handles:
-    if handle != original_window:
-        driver.switch_to.window(handle)
-        driver.close()
-driver.switch_to.window(original_window)
 
 
 def morosos_report(file):
@@ -95,7 +63,35 @@ def morosos_report(file):
             morosos_report(MOROSOS_DOWNLOAD)
 
 
-morosos_report(MOROSOS_DOWNLOAD)
+try:
+    clean_download_folder(MOROSOS_DOWNLOAD)
 
-driver.quit()  # ✅ Fully closes Chrome
-time.sleep(1)
+    driver = sytech_login(URL_SYTECH_MAIN, SYTECH_USER,
+                          SYTECH_PASSWORD, MOROSOS_DOWNLOAD)
+    morosos_report(MOROSOS_DOWNLOAD)
+
+except Exception as e:
+    print(f"❌ Error downloading 'Recurrentes' report: {e}")
+
+finally:
+    try:
+        driver.get(URL_SYTECH_MAIN)
+
+        wait = WebDriverWait(driver, 10)  # waits up to 10 seconds
+        menu_btn = wait.until(
+            EC.element_to_be_clickable((By.ID, "rhMenuBar")))
+        menu_btn.click()
+
+        logout_btn = wait.until(EC.element_to_be_clickable(
+            (By.CSS_SELECTOR, 'a[title="Salir"]')))
+        logout_btn.click()
+
+        print("  ✅ Logout successfully")
+        driver.quit()
+        print("   ✅ Selenium closed")
+    except TimeoutException as te:
+        print(f"❌ Timeout waiting for element: {te}")
+    except NoSuchElementException as ne:
+        print(f"❌ Element not found: {ne}")
+    except Exception as e:
+        print(f"❌ General error logging out of Sytech: {e}")
