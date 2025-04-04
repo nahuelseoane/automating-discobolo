@@ -3,6 +3,7 @@ import time
 import shutil
 import tempfile
 from selenium import webdriver
+from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -32,6 +33,22 @@ def get_last_downloaded_file(download_dir):
     return max(files, key=os.path.getmtime)
 
 
+def click_with_fallback(driver, xpath_list, timeout=15, name="elemento"):
+    for xpath in xpath_list:
+        try:
+            el = WebDriverWait(driver, timeout).until(
+                EC.element_to_be_clickable((By.XPATH, xpath))
+            )
+            driver.execute_script("arguments[0].click();", el)
+            print(f"✅ Clicked '{name}' using xpath: {xpath}")
+            return True
+        except Exception as e:
+            print(
+                f"⚠️ No se encontró '{name}' con xpath: {xpath}. Intentando siguiente...")
+    print(f"❌ No se pudo hacer click en '{name}' con ningún xpath.")
+    return False
+
+
 chrome_options = webdriver.ChromeOptions()
 prefs = {
     "download.default_directory": BANK_PATH,
@@ -57,11 +74,18 @@ chrome_options.add_argument("--safebrowsing-disable-download-protection")
 # Crontab
 chrome_options.add_argument("--headless=new")
 chrome_options.add_argument("--disable-gpu")
-chrome_options.add_argument('--disable-software-rasterizer')  # problems in WSL
+# chrome_options.add_argument('--disable-software-rasterizer')  # problems in WSL
 chrome_options.add_argument("--disable-dev-shm-usage")
 chrome_options.add_argument("--no-sandbox")
 chrome_options.add_argument("--enable-logging")
 chrome_options.add_argument("--v=1")
+# For better environments handle
+# chrome_options.add_argument("--disable-extensions")
+# chrome_options.add_argument("--disable-background-networking")
+# chrome_options.add_argument("--disable-default-apps")
+# chrome_options.add_argument("--disable-sync")
+# chrome_options.add_argument("--disable-translate")
+
 
 # for Crontab
 temp_user_data_dir = tempfile.mkdtemp()
@@ -97,26 +121,81 @@ try:
     choosing_user.click()
 
     # Button 'Continuar'
+    # WebDriverWait(driver, 20).until(
+    #     EC.invisibility_of_element_located((By.ID, "globalLoading"))
+    # )
+    # login_btn = WebDriverWait(driver, 10).until(
+    #     EC.element_to_be_clickable((By.XPATH, '/html/body/div[3]/div/div/div/div/div/div[2]/div/main/div/div/div[2]/div/div[2]/button')))
+    # driver.execute_script("arguments[0].click();", login_btn)
+    # time.sleep(2)
+
+    # Esperar a que desaparezca el loading
     WebDriverWait(driver, 20).until(
         EC.invisibility_of_element_located((By.ID, "globalLoading"))
     )
-    login_btn = WebDriverWait(driver, 10).until(
-        EC.element_to_be_clickable((By.XPATH, '/html/body/div[3]/div/div/div/div/div/div[2]/div/main/div/div/div[2]/div/div[2]/button')))
-    driver.execute_script("arguments[0].click();", login_btn)
-    time.sleep(2)
+
+    # Intentar el primer botón "Continuar"
+    try:
+        login_btn = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable(
+                (By.XPATH, '/html/body/div[3]/div/div/div/div/div/div[2]/div/main/div/div/div[2]/div/div[2]/button'))
+        )
+        driver.execute_script("arguments[0].click();", login_btn)
+        print("✅ Clicked first 'Continuar' button.")
+    except (TimeoutException, NoSuchElementException) as e:
+        print("⚠️ Primer botón no encontrado, intentando alternativa...")
+
+        try:
+            # Segunda opción: otro XPATH más genérico o alternativo
+            alt_btn = WebDriverWait(driver, 10).until(
+                EC.element_to_be_clickable(
+                    (By.XPATH, "//button[contains(text(), 'Continuar')]"))
+            )
+            driver.execute_script("arguments[0].click();", alt_btn)
+            print("✅ Clicked alternative 'Continuar' button.")
+        except Exception as e:
+            print(f"❌ No se pudo hacer click en ningún botón 'Continuar': {e}")
 
     # Skipping Model Pop-up
     # close_modal_if_present(driver)
-    # time.sleep(2)
-
-    # Going to 'Cuentas'
-    driver.get(URL_BANK_CUENTAS)
     time.sleep(2)
 
-    # Movimientos
-    driver.find_element(
-        By.XPATH, '/html/body/div[3]/div/div/div/div/div/div[2]/div[2]/main/div/div/div[1]/div[2]/div/div/div[2]/button').click()
-    time.sleep(6)
+    # Going to 'Cuentas'
+    # <button aria-disabled="false" type="button" class="btn col col-md-8 btn-primary btn focusMouse"> <p class="my-0 py-0 txt-btn-default" aria-label="Ver Cuentas.">Ver Cuentas</p></button>
+    try:
+        cuentas_btn = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable(
+                (By.CSS_SELECTOR, "button.btn-primary.btn.focusMouse"))
+        )
+        cuentas_btn.click()
+    except Exception as e:
+        print(f"Error clicking on 'Cuentas': {e}")
+        # Option 2
+        try:
+            cuentas_btn = WebDriverWait(driver, 10).until(
+                EC.element_to_be_clickable(
+                    (By.XPATH, "//button[.//p[text()='Ver Cuentas']]"))
+            )
+            cuentas_btn.click()
+            print("Second try successful - button 'Cuentas' clicked.")
+        except Exception as e:
+            print(f"2do try - Error clicking on 'Cuentas': {e}")
+            # Option 3
+            driver.get(URL_BANK_CUENTAS)
+    time.sleep(2)
+
+  # Movimientos
+    click_with_fallback(driver, [
+        "/html/body/div[3]/div/div/div/div/div/div[2]/div[2]/main/div/div/div[1]/div[2]/div/div/div[2]/button",
+        "//button[contains(text(), 'Movimientos')]",
+        "//button[@type='button' and contains(., 'Movimientos')]"
+    ], name="Botón 'Movimientos'")
+    with open("debug_movimientos.html", "w", encoding="utf-8") as f:
+        f.write(driver.page_source)
+        print("🧪 HTML guardado en debug_movimientos.html")
+    # driver.find_element(
+    #     By.XPATH, '/html/body/div[3]/div/div/div/div/div/div[2]/div[2]/main/div/div/div[1]/div[2]/div/div/div[2]/button').click()
+    # time.sleep(6)
 
     # Excel download button
     download_button = WebDriverWait(driver, 10).until(EC.presence_of_element_located(
@@ -145,6 +224,7 @@ try:
 except Exception as e:
     print(f"Error during automation: {e}")
 
+
 finally:
     try:
         logout_button = WebDriverWait(driver, 5).until(EC.element_to_be_clickable((
@@ -156,3 +236,15 @@ finally:
         print("  ✅ Selenium closed.")
     except Exception as e:
         print(f"  ⚠️ Logout failed or already logged out. {e}")
+        try:
+            driver.get(URL_BANK_CUENTAS)
+            time.sleep(5)
+            logout_button = WebDriverWait(driver, 5).until(EC.element_to_be_clickable((
+                By.CSS_SELECTOR, '#root > div > div > div > div > div > div:nth-child(1) > div > header > div > div > div > div.box.col-2.col-md-6 > div > button')))
+            logout_button.click()
+            print("  ✅ Logout successfully")
+            shutil.rmtree(temp_user_data_dir)
+            driver.quit()
+            print("  ✅ Selenium closed.")
+        except Exception as e:
+            print(f"Second try login out error: {e}")
