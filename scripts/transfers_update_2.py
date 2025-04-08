@@ -1,6 +1,6 @@
 import pandas as pd
 from openpyxl import load_workbook
-from scripts.extra_functions import extract_dni, filter_positive_payments
+from scripts.extra_functions import extract_dni, filter_positive_payments, extract_deposito
 from config.config import TRANSFER_FILE, SHEET_NAME, EMAILS_FILE, TENNIS_CLASS_FEE
 
 df, transfer = filter_positive_payments(TRANSFER_FILE, SHEET_NAME)
@@ -23,32 +23,49 @@ ws = wb[SHEET_NAME]
 
 for idx, row in df_merged.iterrows():
     full_name = row['Jefe de Grupo I']
+    description = row["Descripción"]
     seq, amount, tipo = row['N° Secuencia'], row['Importe'], row['Tipo de Pago']
     for row in ws.iter_rows(min_row=2, max_row=ws.max_row, values_only=False):
         if row[0].value == seq:  # Assuming is Column A (N° Secuencia)
-            sent_cell = row[6]  # Column H (Jefe de Grupo)
-            if sent_cell.value is None or sent_cell.value == "":
-                sent_cell.value = full_name  # ✅ Update the cell without affecting formatting
-                print(f" ✅ {seq} Jefe de Grupo updated: {full_name}.")
-                if row[5].value is None or sent_cell.value == "":  # Column 'Concept'
-                    if not pd.isna(full_name):
-                        if full_name == 'CANFORA, KEVIN' and int(amount) <= 20000:
-                            row[5].value = 'TENIS'
-                            row[6].value = 'CLASES KEVIN'
-                            print(f" ✅ {seq} updated: TENIS - CLASES KEVIN")
-                            continue
-
-                        if not pd.isna(tipo):
-                            row[5].value = str(tipo).strip()
-                        else:
-                            row[5].value = 'CUOTA'
-                        print(f" ✅ Concept updated to {row[5].value} - {seq}")
-                    if int(amount) == TENNIS_CLASS_FEE:
-                        row[5].value = 'TENIS'
-                        row[6].value = 'CLASE NO SOCIO'
-                        print(f" ✅ {seq} updated: TENIS - CLASE NO SOCIO")
+            jefe_de_grupo = row[6]  # Column H (Jefe de Grupo)
+            concept = row[5]
+            # if jefe_de_grupo.value is None or jefe_de_grupo.value == "":
+            #     jefe_de_grupo.value = full_name  # ✅ Update the cell without affecting formatting
+            #     if full_name:
+            #         print(
+            #             f" ✅ {seq} Updated --> Concept: Cuota & Jefe de Grupo: {full_name}.")
+            if concept.value is None or concept.value == "":  # Column 'Concept'
+                if extract_deposito(description):
+                    concept.value = 'DEPOSITO'
+                    print(f" ✅ {seq} Updated--> Concept: DEPOSITO")
+                elif not pd.isna(full_name):
+                    if full_name == 'CANFORA, KEVIN' and int(amount) <= 20000:
+                        concept.value = 'TENIS'
+                        jefe_de_grupo.value = 'CLASES KEVIN'
+                        print(
+                            f" ✅ {seq} Updated --> Concept: TENIS & Jefe de Grupo: CLASES KEVIN")
                         continue
 
+                    if not pd.isna(tipo):
+                        concept.value = str(tipo).strip()
+                    else:
+                        concept.value = 'CUOTA'
+                        if jefe_de_grupo.value is None or jefe_de_grupo.value == "":
+                            jefe_de_grupo.value = full_name  # ✅ Update the cell without affecting formatting
+                            if full_name:
+                                print(
+                                    f" ✅ {seq} Updated --> Concept: CUOTA & Jefe de Grupo: {full_name}.")
+
+                    # print(f" ✅ {seq} - Concept updated to {concept.value}")
+                elif int(amount) == TENNIS_CLASS_FEE:
+                    concept.value = 'TENIS'
+                    jefe_de_grupo.value = 'CLASE NO SOCIO'
+                    print(
+                        f" ✅ {seq} Updated --> Concept: TENIS & Jefe de Grupo: CLASE NO SOCIO")
+                    continue
+                else:
+                    print(
+                        f"  ❌ {seq} Not updated: Transfer's match wasn't found")
 
 # Save the workbook as a new file
 wb.save(TRANSFER_FILE)

@@ -31,10 +31,6 @@ def payment_load(df, driver, download_root, excel_file, sheet_name, year):
         seq, amount = row['N° Secuencia'], row['Importe']
         concept = row["Concepto"]
 
-        if extract_deposito(row["Descripción"]):
-            print(f"   🔃 Skipping - DEPOSITO - {seq}")
-            continue
-
         if str(concept).strip().lower() == "deposito":
             print(f"   🔃 Skipping - DEPOSITO - {seq}")
             continue
