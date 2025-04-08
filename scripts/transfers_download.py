@@ -190,9 +190,10 @@ try:
         "//button[contains(text(), 'Movimientos')]",
         "//button[@type='button' and contains(., 'Movimientos')]"
     ], name="Botón 'Movimientos'")
-    with open("debug_movimientos.html", "w", encoding="utf-8") as f:
-        f.write(driver.page_source)
-        print("🧪 HTML guardado en debug_movimientos.html")
+    # with open("debug_movimientos.html", "w", encoding="utf-8") as f:
+    #     f.write(driver.page_source)
+    #     print("🧪 HTML guardado en debug_movimientos.html")
+
     # driver.find_element(
     #     By.XPATH, '/html/body/div[3]/div/div/div/div/div/div[2]/div[2]/main/div/div/div[1]/div[2]/div/div/div[2]/button').click()
     # time.sleep(6)
