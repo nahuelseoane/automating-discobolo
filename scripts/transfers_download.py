@@ -198,6 +198,12 @@ try:
     #     By.XPATH, '/html/body/div[3]/div/div/div/div/div/div[2]/div[2]/main/div/div/div[1]/div[2]/div/div/div[2]/button').click()
     # time.sleep(6)
 
+    # Ver Mas Movimientos
+    # mas_movimientos_btn = WebDriverWait(driver, 10).until(
+    #     EC.presence_of_element_located((By.ID, "verMasElementos")))
+    # mas_movimientos_btn.click()
+    # time.sleep(2)
+    
     # Excel download button
     download_button = WebDriverWait(driver, 10).until(EC.presence_of_element_located(
         (By.CSS_SELECTOR, '#cuentasMovimientosContext > div > div > div > div > ul > div > div > button.btn.p-0.me-3.btn-icon-primary.btn.focusMouse')

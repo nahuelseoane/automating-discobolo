@@ -29,11 +29,6 @@ for idx, row in df_merged.iterrows():
         if row[0].value == seq:  # Assuming is Column A (N° Secuencia)
             jefe_de_grupo = row[6]  # Column H (Jefe de Grupo)
             concept = row[5]
-            # if jefe_de_grupo.value is None or jefe_de_grupo.value == "":
-            #     jefe_de_grupo.value = full_name  # ✅ Update the cell without affecting formatting
-            #     if full_name:
-            #         print(
-            #             f" ✅ {seq} Updated --> Concept: Cuota & Jefe de Grupo: {full_name}.")
             if concept.value is None or concept.value == "":  # Column 'Concept'
                 if extract_deposito(description):
                     concept.value = 'DEPOSITO'
@@ -46,15 +41,16 @@ for idx, row in df_merged.iterrows():
                             f" ✅ {seq} Updated --> Concept: TENIS & Jefe de Grupo: CLASES KEVIN")
                         continue
 
-                    if not pd.isna(tipo):
+                    elif not pd.isna(tipo):
                         concept.value = str(tipo).strip()
                     else:
                         concept.value = 'CUOTA'
-                        if jefe_de_grupo.value is None or jefe_de_grupo.value == "":
-                            jefe_de_grupo.value = full_name  # ✅ Update the cell without affecting formatting
-                            if full_name:
-                                print(
-                                    f" ✅ {seq} Updated --> Concept: CUOTA & Jefe de Grupo: {full_name}.")
+                    # Assigning Full name to column 'Jefe de Grupo'
+                    if jefe_de_grupo.value is None or jefe_de_grupo.value == "":
+                        jefe_de_grupo.value = full_name  # ✅ Update the cell without affecting formatting
+                        if full_name:
+                            print(
+                                f" ✅ {seq} Updated --> Concept: {concept.value} & Jefe de Grupo: {full_name}.")
 
                     # print(f" ✅ {seq} - Concept updated to {concept.value}")
                 elif int(amount) == TENNIS_CLASS_FEE:
