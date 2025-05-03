@@ -2,7 +2,7 @@ import os
 import time
 import traceback
 import pandas as pd
-from scripts.extra_functions import update_loaded_status, extract_operation_number, extract_date, sanitize_filename, extract_deposito
+from scripts.extra_functions import update_loaded_status, extract_operation_number, extract_date, sanitize_filename
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support.ui import Select

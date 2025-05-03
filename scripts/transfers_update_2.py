@@ -1,9 +1,10 @@
 import pandas as pd
 from openpyxl import load_workbook
-from scripts.extra_functions import extract_dni, filter_positive_payments, extract_deposito
+from scripts.extra_functions import extract_dni, filter_positive_payments, extract_deposito, ensure_sheet_exists
 from config.config import TRANSFER_FILE, SHEET_NAME, EMAILS_FILE, TENNIS_CLASS_FEE
 
 df, transfer = filter_positive_payments(TRANSFER_FILE, SHEET_NAME)
+ensure_sheet_exists(EMAILS_FILE, SHEET_NAME)
 df_emails = pd.read_excel(EMAILS_FILE, sheet_name=SHEET_NAME)
 
 transfer["DNI"] = transfer["Descripción"].apply(extract_dni)
@@ -14,8 +15,6 @@ df_merged = transfer.merge(
     on='DNI',
     how='left'
 )
-
-# print(df_merged[["Jefe de Grupo", "DNI"]].head())
 
 # Load the workbook
 wb = load_workbook(TRANSFER_FILE)

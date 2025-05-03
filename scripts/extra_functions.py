@@ -5,6 +5,23 @@ from openpyxl import load_workbook
 from openpyxl.styles import PatternFill
 
 
+def ensure_sheet_exists(workbook_path, sheet_name):
+    wb = load_workbook(workbook_path)
+
+    # If the sheet exists, do nothing
+    if sheet_name in wb.sheetnames:
+        wb.close()
+        return
+
+    # Copy the last sheet as a template
+    last_sheet = wb[wb.sheetnames[-1]]
+    new_sheet = wb.copy_worksheet(last_sheet)
+    new_sheet.title = sheet_name
+
+    wb.save(workbook_path)
+    wb.close()
+
+
 def clean_download_folder(download_folder):
     try:
         for filename in os.listdir(download_folder):

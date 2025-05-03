@@ -99,18 +99,42 @@ driver.execute_cdp_cmd("Page.setDownloadBehavior", {
 })
 
 try:
+    print("   ▶️ Entering bank page.")
     # Main Bank Login Page
     driver.get(URL_BANK_MAIN)
-    # User
+    # Check if page is ready
+    print("Document readyState:", driver.execute_script(
+        "return document.readyState;"))
+    time.sleep(2)
+
+    # USER
+    # DEBUG: find username field
+    try:
+        username_field = driver.find_element(By.ID, "username")
+        print("Username field displayed:", username_field.is_displayed())
+        print("Username field enabled:", username_field.is_enabled())
+    except Exception as e:
+        print(f"Couldn't find username field: {e}")
     WebDriverWait(driver, 10).until(EC.presence_of_element_located(
         (By.ID, "username"))).send_keys(BANK_USER)
     time.sleep(1)
-    # Password
+    print("   ✅ Username selected")
+
+    # PASSWORD
     WebDriverWait(driver, 10).until(EC.presence_of_element_located(
         (By.ID, "password"))).send_keys(BANK_PASSWORD)
-    # Login
-    driver.find_element(
-        By.XPATH, '/html/body/div[3]/div/div/div/div/div/div[2]/div/main/div/div/div/div[2]/form/div[4]/button[1]').click()
+    print("   ✅ Password selected")
+
+    # LOGIN
+    try:
+        login_button = WebDriverWait(driver, 10).until(EC.element_to_be_clickable(
+            (By.XPATH,
+             '/html/body/div[3]/div/div/div/div/div/div[2]/div/main/div/div/div/div[2]/form/div[4]/button[1]')
+        ))
+        login_button.click()
+        print("   ✅ Login successful.")
+    except Exception as e:
+        print(f"   ❌ Error login in {e}")
 
     # Selecting user
     choosing_user = WebDriverWait(driver, 10).until(EC.presence_of_element_located(
@@ -119,22 +143,15 @@ try:
     driver.execute_script("arguments[0].scrollIntoView(true);", choosing_user)
     time.sleep(1)
     choosing_user.click()
+    print("   ✅ Selecting user successful.")
 
-    # Button 'Continuar'
-    # WebDriverWait(driver, 20).until(
-    #     EC.invisibility_of_element_located((By.ID, "globalLoading"))
-    # )
-    # login_btn = WebDriverWait(driver, 10).until(
-    #     EC.element_to_be_clickable((By.XPATH, '/html/body/div[3]/div/div/div/div/div/div[2]/div/main/div/div/div[2]/div/div[2]/button')))
-    # driver.execute_script("arguments[0].click();", login_btn)
-    # time.sleep(2)
-
-    # Esperar a que desaparezca el loading
+    # BUTTON 'Continuar'
+    # Wait for the loading disappears
     WebDriverWait(driver, 20).until(
         EC.invisibility_of_element_located((By.ID, "globalLoading"))
     )
 
-    # Intentar el primer botón "Continuar"
+    # First attempt for clicking "Continuar"
     try:
         login_btn = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable(
@@ -146,7 +163,7 @@ try:
         print("⚠️ Primer botón no encontrado, intentando alternativa...")
 
         try:
-            # Segunda opción: otro XPATH más genérico o alternativo
+            # Second attempt: other XPATH more generic or alternative
             alt_btn = WebDriverWait(driver, 10).until(
                 EC.element_to_be_clickable(
                     (By.XPATH, "//button[contains(text(), 'Continuar')]"))
@@ -203,7 +220,7 @@ try:
     #     EC.presence_of_element_located((By.ID, "verMasElementos")))
     # mas_movimientos_btn.click()
     # time.sleep(2)
-    
+
     # Excel download button
     download_button = WebDriverWait(driver, 10).until(EC.presence_of_element_located(
         (By.CSS_SELECTOR, '#cuentasMovimientosContext > div > div > div > div > ul > div > div > button.btn.p-0.me-3.btn-icon-primary.btn.focusMouse')
