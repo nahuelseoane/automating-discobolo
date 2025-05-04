@@ -216,10 +216,62 @@ try:
     # time.sleep(6)
 
     # Ver Mas Movimientos
-    # mas_movimientos_btn = WebDriverWait(driver, 10).until(
-    #     EC.presence_of_element_located((By.ID, "verMasElementos")))
-    # mas_movimientos_btn.click()
-    # time.sleep(2)
+    try:
+        mas_movimientos_btn = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.ID, "verMasElementos")))
+        mas_movimientos_btn.click()
+        print("   ✅'Ver mas movimientos' btn successfully clicked.")
+        time.sleep(2)
+    except Exception as e:
+        try:
+            print(
+                f"  First try to click on 'Mas Movimientos' failed. Trying second option. Error: {e}")
+            mas_movimientos_btn = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.XPATH, '//*[@id="verMasElementos"]')))
+            mas_movimientos_btn.click()
+            print("   ✅'Ver mas movimientos' btn successfully clicked.")
+            time.sleep(2)
+        except Exception as e:
+            print(
+                f"  Second try to click on 'Mas Movimientos' failed. Trying third option. Error: {e}")
+            try:
+                mas_movimientos_btn = WebDriverWait(driver, 10).until(
+                    EC.presence_of_element_located((By.CLASS_NAME, "btn-icon-primary")))
+                mas_movimientos_btn.click()
+                print("   ✅'Ver mas movimientos' btn successfully clicked.")
+                time.sleep(2)
+            except Exception as e:
+                print(
+                    f"  Third try to click on 'Mas Movimientos' failed. Error: {e}")
+
+    # Ver Mas Movimientos -- second time
+    # try:
+    #     mas_movimientos_btn = WebDriverWait(driver, 10).until(
+    #         EC.presence_of_element_located((By.ID, "verMasElementos")))
+    #     mas_movimientos_btn.click()
+    #     print("   ✅'Ver mas movimientos' 2 time btn successfully clicked.")
+    #     time.sleep(2)
+    # except Exception as e:
+    #     try:
+    #         print(
+    #             f"  First try to click on 'Mas Movimientos' 2 time failed. Trying second option. Error: {e}")
+    #         mas_movimientos_btn = WebDriverWait(driver, 10).until(
+    #             EC.presence_of_element_located((By.XPATH, '//*[@id="verMasElementos"]')))
+    #         mas_movimientos_btn.click()
+    #         print("   ✅'Ver mas movimientos' 2 time btn successfully clicked.")
+    #         time.sleep(2)
+    #     except Exception as e:
+    #         print(
+    #             f"  Second try to click on 'Mas Movimientos' 2 time failed. Trying third option. Error: {e}")
+    #         try:
+    #             mas_movimientos_btn = WebDriverWait(driver, 10).until(
+    #                 EC.presence_of_element_located((By.CLASS_NAME, "btn-icon-primary")))
+    #             mas_movimientos_btn.click()
+    #             print("   ✅'Ver mas movimientos' 2 time btn successfully clicked.")
+    #             time.sleep(2)
+    #         except Exception as e:
+    #             print(
+    #                 f"  Third try to click on 'Mas Movimientos' 2 time failed. Error: {e}")
 
     # Excel download button
     download_button = WebDriverWait(driver, 10).until(EC.presence_of_element_located(
