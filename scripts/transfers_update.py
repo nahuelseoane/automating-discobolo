@@ -15,7 +15,7 @@ current_month_sheet = month_names[current_month_number - 1]
 print(f"   📂 Updating sheet: {current_month_sheet}")
 
 # Load bank file
-df_bank = pd.read_excel(BANK_FILE, skiprows=1)
+df_bank = pd.read_excel(BANK_FILE, skiprows=1, engine="openpyxl")
 
 # Delete "descripción" column (duplicate one)
 df_bank = df_bank.drop(columns=["Descripción"])

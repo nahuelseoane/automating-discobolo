@@ -30,6 +30,13 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+echo "🔹 Step 3 - part 2: Renaming bank file"
+python3 ./scripts/transfers_download_renaming.py
+if [ $? -ne 0 ]; then
+    echo "❌ Error running transfers_download_renaming.py"
+    exit 1
+fi
+
 # Step 4: Transfer File Update
 echo "🔹 Step 4: Updating Transfer File"
 python3 ./scripts/transfers_update.py

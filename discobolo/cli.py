@@ -13,13 +13,18 @@ def run():
 
 
 @app.command()
-def transfers(download: bool = typer.Option(False), update1: bool = typer.Option(False), update2: bool = typer.Option(False)):
+def transfers(download1: bool = typer.Option(False), download2: bool = typer.Option(False), update1: bool = typer.Option(False), update2: bool = typer.Option(False)):
     """Download and/or update Bank Movements"""
 
-    if download:
+    if download1:
         typer.echo("📥 Downloading bank movements")
         subprocess.run(
             ["./venv/bin/python", "scripts/transfers_download.py"])
+
+    if download2:
+        typer.echo("📥 Bank file renaming complete.")
+        subprocess.run(
+            ["./venv/bin/python", "scripts/transfers_download_renaming.py"])
 
     if update1:
         typer.echo("📝 Updating transfer file with data.")

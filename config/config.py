@@ -5,7 +5,7 @@ from scripts.extra_functions import select_month
 load_dotenv()
 # MONTH VARIABLES
 MONTH_NUMBER = int(os.getenv("MONTH_NUMBER"))
-TENNIS_CLASS_FEE = 6000
+TENNIS_CLASS_FEE = 8000
 
 # EMAIL SETTINGS
 SMTP_SERVER = os.getenv("SMTP_SERVER")

@@ -279,27 +279,8 @@ try:
     ))
     driver.execute_script("arguments[0].click();", download_button)
     time.sleep(10)
-    # Renaming file
-    files = sorted(os.listdir(BANK_PATH), key=lambda f: os.path.getctime(
-        os.path.join(BANK_PATH, f)), reverse=True)
-    if files:
-        try:
-            latest_file = files[0]
-            original_path = os.path.join(
-                BANK_PATH, latest_file)
-
-            new_filename = "movimientos_banco.xlsx"
-            new_path = os.path.join(BANK_PATH, new_filename)
-
-            os.rename(original_path, new_path)
-
-        except Exception as e:
-            print(f"❌ Problem while changing file name: {e}")
-    else:
-        print("❌ No files found in the download folder.")
 except Exception as e:
     print(f"Error during automation: {e}")
-
 
 finally:
     try:
