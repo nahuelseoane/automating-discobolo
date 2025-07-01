@@ -15,15 +15,33 @@ clean_download_folder(BANK_PATH)
 
 
 def close_modal_if_present(driver, timeout=5):
-    try:
-        WebDriverWait(driver, timeout).until(
-            EC.presence_of_element_located((By.ID, "modal-popup"))
-        )
-        # x
-        # <button aria-disabled="false" type="button" aria-label="Cerrar." class="btn btn-link-primary btn focusMouse"> <svg data-testid="cerrar-icon" width="13px" height="13px" xmlns="http://www.w3.org/2000/svg" class="svg-icon svg-input-white" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 13 13" aria-hidden="true"><path xmlns="http://www.w3.org/2000/svg" d="M12.2763 1.9024C12.6472 1.54696 12.6472 0.954113 12.2763 0.598673C11.9271 0.263994 11.3761 0.263994 11.0269 0.598673L7.1186 4.34414C6.76063 4.6872 6.1959 4.6872 5.83793 4.34414L1.92961 0.598672C1.58038 0.263993 1.02944 0.263994 0.680205 0.598673C0.309311 0.954112 0.309312 1.54696 0.680205 1.9024L4.47613 5.54016C4.8563 5.90449 4.8563 6.51218 4.47613 6.87651L0.680204 10.5143C0.309311 10.8697 0.309311 11.4626 0.680205 11.818C1.02944 12.1527 1.58038 12.1527 1.92961 11.818L5.83793 8.07252C6.1959 7.72947 6.76063 7.72947 7.1186 8.07252L11.0269 11.818C11.3761 12.1527 11.9271 12.1527 12.2763 11.818C12.6472 11.4626 12.6472 10.8697 12.2763 10.5143L8.48039 6.87651C8.10022 6.51218 8.10022 5.90449 8.4804 5.54016L12.2763 1.9024Z" fill="svg-input-white"></path></svg></button>
-    except Exception as e:
-        print(f"  ✅ No modal popup found. Continuing... {e}")
+    posibles_ids = ["modal-popup", "sessionExpireWarning"]
+    for modal_id in posibles_ids:
+        try:
+            WebDriverWait(driver, timeout).until(
+                EC.presence_of_element_located((By.ID, modal_id))
+            )
+            print(f"⚠️ Popup '{modal_id}' visible. Intentando cerrarlo.")
 
+            # Trying different options
+            try:
+                # 1. Btn class "close"
+                close_btn = driver.find_element(By.XPATH, f"//div[@id='{modal_id}']//button[contains(@class, 'close')]")
+            except:
+                try:
+                    # 2. Btn with aria-label "Cerrar."
+                    close_btn = driver.find_element(By.XPATH, f"//div[@id='{modal_id}']//button[@aria-label='Cerrar.']")
+                except:
+                    print(f"❌ No se encontró botón para cerrar el modal '{modal_id}'")
+                    continue  # next modal
+
+            driver.execute_script("arguments[0].click();", close_btn)
+            time.sleep(1)
+            print(f"✅ Popup '{modal_id}' cerrado.")
+        except TimeoutException:
+            print("Timeout modal")
+        except Exception as e:
+            print(f"❌ Error al cerrar modal '{modal_id}': {e}")
 
 def get_last_downloaded_file(download_dir):
     files = [os.path.join(download_dir, f) for f in os.listdir(download_dir)]
@@ -134,7 +152,8 @@ try:
         login_button.click()
         print("   ✅ Login successful.")
     except Exception as e:
-        print(f"   ❌ Error login in {e}")
+        # print(f"   ❌ Error login in {e}")
+        print("   ❌ Error login in.")
 
     # Selecting user
     choosing_user = WebDriverWait(driver, 10).until(EC.presence_of_element_located(
@@ -171,14 +190,14 @@ try:
             driver.execute_script("arguments[0].click();", alt_btn)
             print("✅ Clicked alternative 'Continuar' button.")
         except Exception as e:
-            print(f"❌ No se pudo hacer click en ningún botón 'Continuar': {e}")
+            # print(f"❌ No se pudo hacer click en ningún botón 'Continuar': {e}")
+            print("❌ No se pudo hacer click en ningún botón 'Continuar'.")
 
     # Skipping Model Pop-up
-    # close_modal_if_present(driver)
+    close_modal_if_present(driver)
     time.sleep(2)
 
     # Going to 'Cuentas'
-    # <button aria-disabled="false" type="button" class="btn col col-md-8 btn-primary btn focusMouse"> <p class="my-0 py-0 txt-btn-default" aria-label="Ver Cuentas.">Ver Cuentas</p></button>
     try:
         cuentas_btn = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable(
@@ -186,7 +205,8 @@ try:
         )
         cuentas_btn.click()
     except Exception as e:
-        print(f"Error clicking on 'Cuentas': {e}")
+        # print(f"Error clicking on 'Cuentas': {e}")
+        print("Error clicking on 'Cuentas'")
         # Option 2
         try:
             cuentas_btn = WebDriverWait(driver, 10).until(
@@ -196,7 +216,8 @@ try:
             cuentas_btn.click()
             print("Second try successful - button 'Cuentas' clicked.")
         except Exception as e:
-            print(f"2do try - Error clicking on 'Cuentas': {e}")
+            # print(f"2do try - Error clicking on 'Cuentas': {e}")
+            print("2do try - Error clicking on 'Cuentas'.")
             # Option 3
             driver.get(URL_BANK_CUENTAS)
     time.sleep(2)
@@ -216,62 +237,67 @@ try:
     # time.sleep(6)
 
     # Ver Mas Movimientos
-    try:
-        mas_movimientos_btn = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.ID, "verMasElementos")))
-        mas_movimientos_btn.click()
-        print("   ✅'Ver mas movimientos' btn successfully clicked.")
-        time.sleep(2)
-    except Exception as e:
+    def ver_mas_movimientos():
         try:
-            print(
-                f"  First try to click on 'Mas Movimientos' failed. Trying second option. Error: {e}")
             mas_movimientos_btn = WebDriverWait(driver, 10).until(
-                EC.presence_of_element_located((By.XPATH, '//*[@id="verMasElementos"]')))
-            mas_movimientos_btn.click()
-            print("   ✅'Ver mas movimientos' btn successfully clicked.")
+                EC.element_to_be_clickable((By.ID, "verMasElementos")))
+            # Check if it isn't disabled
+            disabled_attr = mas_movimientos_btn.get_attribute("aria-disabled")
+            if disabled_attr == "true":
+                raise Exception("Button is disable (aria-disabled=true)")
+
+            # Doing scroll
+            driver.execute_script(
+                "arguments[0].scrollIntoView({block: 'center'});", mas_movimientos_btn)
+
+            # Trying with Selenium
+            try:
+                WebDriverWait(driver, 5).until(
+                    EC.element_to_be_clickable((By.ID, "verMasElementos")))
+                mas_movimientos_btn.click()
+                print("✅ 'Ver más movimientos' btn successfully clicked with Selenium.")
+            except Exception as click_error:
+                print("⚠️ Selenium could'nt click. Try with JS.")
+                driver.execute_script(
+                    "arguments[0].click();", mas_movimientos_btn)
+                print("✅ Click with JS made.")
             time.sleep(2)
+
         except Exception as e:
             print(
-                f"  Second try to click on 'Mas Movimientos' failed. Trying third option. Error: {e}")
+                f"❌ 1st try: Failed to click 'Ver más movimientos'. Error: {e}")
             try:
                 mas_movimientos_btn = WebDriverWait(driver, 10).until(
-                    EC.presence_of_element_located((By.CLASS_NAME, "btn-icon-primary")))
+                    EC.presence_of_element_located((By.ID, "verMasElementos")))
                 mas_movimientos_btn.click()
                 print("   ✅'Ver mas movimientos' btn successfully clicked.")
                 time.sleep(2)
             except Exception as e:
-                print(
-                    f"  Third try to click on 'Mas Movimientos' failed. Error: {e}")
-
-    # Ver Mas Movimientos -- second time
-    # try:
-    #     mas_movimientos_btn = WebDriverWait(driver, 10).until(
-    #         EC.presence_of_element_located((By.ID, "verMasElementos")))
-    #     mas_movimientos_btn.click()
-    #     print("   ✅'Ver mas movimientos' 2 time btn successfully clicked.")
-    #     time.sleep(2)
-    # except Exception as e:
-    #     try:
-    #         print(
-    #             f"  First try to click on 'Mas Movimientos' 2 time failed. Trying second option. Error: {e}")
-    #         mas_movimientos_btn = WebDriverWait(driver, 10).until(
-    #             EC.presence_of_element_located((By.XPATH, '//*[@id="verMasElementos"]')))
-    #         mas_movimientos_btn.click()
-    #         print("   ✅'Ver mas movimientos' 2 time btn successfully clicked.")
-    #         time.sleep(2)
-    #     except Exception as e:
-    #         print(
-    #             f"  Second try to click on 'Mas Movimientos' 2 time failed. Trying third option. Error: {e}")
-    #         try:
-    #             mas_movimientos_btn = WebDriverWait(driver, 10).until(
-    #                 EC.presence_of_element_located((By.CLASS_NAME, "btn-icon-primary")))
-    #             mas_movimientos_btn.click()
-    #             print("   ✅'Ver mas movimientos' 2 time btn successfully clicked.")
-    #             time.sleep(2)
-    #         except Exception as e:
-    #             print(
-    #                 f"  Third try to click on 'Mas Movimientos' 2 time failed. Error: {e}")
+                try:
+                    print(
+                        "  2do try to click on 'Mas Movimientos' failed. Trying other option.")
+                    mas_movimientos_btn = WebDriverWait(driver, 10).until(
+                        EC.presence_of_element_located((By.XPATH, '//*[@id="verMasElementos"]')))
+                    mas_movimientos_btn.click()
+                    print("   ✅'Ver mas movimientos' btn successfully clicked.")
+                    time.sleep(2)
+                except Exception as e:
+                    print(
+                        "3rd try to click on 'Mas Movimientos' failed. Trying other option.")
+                    try:
+                        mas_movimientos_btn = WebDriverWait(driver, 10).until(
+                            EC.presence_of_element_located((By.CLASS_NAME, "btn-icon-primary")))
+                        mas_movimientos_btn.click()
+                        print("   ✅'Ver mas movimientos' btn successfully clicked.")
+                        time.sleep(2)
+                    except Exception as e:
+                        print(
+                            f"  4th try to click on 'Mas Movimientos' failed. Error: {e}")
+            return
+    # 1st time:
+    ver_mas_movimientos()
+    # 2nd time:
+    ver_mas_movimientos()
 
     # Excel download button
     download_button = WebDriverWait(driver, 10).until(EC.presence_of_element_located(
