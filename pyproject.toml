@@ -9,6 +9,12 @@ description = "Automated transfers and notifications system for Discobolo"
 readme = "README.md"
 requires-python = ">=3.7"
 dependencies = [
+    "secure-smtplib",
+    "pandas",
+    "openpyxl",
+    "selenium",
+    "requests",
+    "python-dotenv",
     "typer[all]"
 ]
 

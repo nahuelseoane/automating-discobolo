@@ -14,20 +14,19 @@ This project is designed to simplify daily tasks and improve traceability for pa
 
 ```
 automating-discobolo/
-├── bin/                         # Main execution scripts
-│   ├── run_discobolo_pipeline.sh  # Entry point script
-│   ├── automation_pipeline.sh     # Orchestrates full process
-├── config/                      # Configuration files
-│   ├── config.py
-│   └── requirements.txt
-├── data/                        # Data storage
-├── logs/                        # Log files
-├── scripts/                     # Supporting automation scripts
-├── discobolo/                   # Python CLI package
-│   └── cli.py                   # Main CLI logic
-├── venv/                        # Virtual environment
-├── pyproject.toml               # CLI tool packaging file
+├── discobolo/
+│   ├── __init__.py
+│   ├── cli.py                # entry point for the CLI
+│   ├── config/               # all configuration
+│   │   └── config.py
+│   ├── scripts/              # all the automation logic
+│   │   ├── backup_files.py
+│   │   ├── email_sending_automate.py
+│   │   └── extra_functions.py
+├── pyproject.toml
 ├── README.md
+├── .gitignore
+
 ```
 
 ---

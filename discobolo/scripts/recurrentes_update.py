@@ -2,7 +2,7 @@ import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.styles import PatternFill, Font
 from openpyxl.utils import get_column_letter
-from config.config import RECURRENTES_REPORT, RECURRENTES_MAIN, MONTH
+from discobolo.config.config import RECURRENTES_REPORT, RECURRENTES_MAIN, MONTH
 
 
 df = pd.read_excel(RECURRENTES_REPORT, skiprows=4, engine="openpyxl")

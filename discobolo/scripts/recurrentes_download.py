@@ -3,9 +3,9 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from selenium.webdriver.support import expected_conditions as EC
-from scripts.sytech_login import sytech_login
-from scripts.extra_functions import clean_download_folder
-from config.config import RECURRENTES_DOWNLOAD, SYTECH_USER, SYTECH_PASSWORD, URL_SYTECH_MAIN, R10246
+from discobolo.scripts.sytech_login import sytech_login
+from discobolo.scripts.extra_functions import clean_download_folder
+from discobolo.config.config import RECURRENTES_DOWNLOAD, SYTECH_USER, SYTECH_PASSWORD, URL_SYTECH_MAIN, R10246
 
 try:
     clean_download_folder(RECURRENTES_DOWNLOAD)

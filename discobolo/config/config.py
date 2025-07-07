@@ -1,11 +1,14 @@
 import os
+
 from dotenv import load_dotenv
-from scripts.extra_functions import select_month
+
+from discobolo.scripts.extra_functions import select_month
 
 load_dotenv()
 # MONTH VARIABLES
 MONTH_NUMBER = int(os.getenv("MONTH_NUMBER"))
 TENNIS_CLASS_FEE = 8000
+KEVIN_MAX = 50000
 
 # EMAIL SETTINGS
 SMTP_SERVER = os.getenv("SMTP_SERVER")
@@ -29,10 +32,8 @@ MOROSOS_DOWNLOAD = os.path.join(MOROSOS_PATH, "descarga_reporte")
 MOROSOS_REPORT = os.path.join(MOROSOS_DOWNLOAD, "reporte_morosos.xlsx")
 MOROSOS_MAIN = os.path.join(MOROSOS_PATH, f"Morosos {YEAR}.xlsx")
 RECURRENTES_PATH = os.path.join(BASE_PATH, "Recurrentes")
-RECURRENTES_DOWNLOAD = os.path.join(
-    RECURRENTES_PATH, "descarga_reporte")
-RECURRENTES_REPORT = os.path.join(
-    RECURRENTES_DOWNLOAD, "rockhopper_R10246.xlsx")
+RECURRENTES_DOWNLOAD = os.path.join(RECURRENTES_PATH, "descarga_reporte")
+RECURRENTES_REPORT = os.path.join(RECURRENTES_DOWNLOAD, "rockhopper_R10246.xlsx")
 RECURRENTES_MAIN = os.path.join(RECURRENTES_PATH, f"Recurrentes {YEAR}.xlsx")
 R10240 = os.getenv("R10240")
 R10246 = os.getenv("R10246")

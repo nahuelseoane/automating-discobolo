@@ -1,7 +1,0 @@
-secure-smtplib
-pandas
-openpyxl
-selenium
-requests
-python-dotenv
-typer[all]

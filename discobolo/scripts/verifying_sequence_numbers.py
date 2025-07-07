@@ -1,5 +1,5 @@
 import pandas as pd
-from config.config import TRANSFER_FILE, SHEET_NAME
+from discobolo.config.config import TRANSFER_FILE, SHEET_NAME
 
 df = pd.read_excel(TRANSFER_FILE, sheet_name=SHEET_NAME)
 

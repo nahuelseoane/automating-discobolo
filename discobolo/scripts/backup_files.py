@@ -1,7 +1,7 @@
 import os
 import shutil
 from datetime import datetime
-from config.config import TRANSFER_FILE, EMAILS_FILE, MOROSOS_MAIN, BACKUP_PATH
+from discobolo.config.config import TRANSFER_FILE, EMAILS_FILE, MOROSOS_MAIN, BACKUP_PATH
 
 os.makedirs(BACKUP_PATH, exist_ok=True)  # Ensure backup directory exists
 

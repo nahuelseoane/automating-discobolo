@@ -1,6 +1,19 @@
 # discobolo/cli.py
-import typer
 import subprocess
+from pathlib import Path
+
+import typer
+
+from discobolo.scripts.email_sending_automate import send_emails
+from discobolo.scripts.morosos_download import run_morosos_download
+from discobolo.scripts.morosos_update import run_morosos_update
+from discobolo.scripts.sytech_automate import run_sytech_automation
+from discobolo.scripts.transfers_download import run_transfers_download
+from discobolo.scripts.transfers_download_renaming import (
+    run_transfers_download_renaming,
+)
+from discobolo.scripts.transfers_update import run_transfers_update
+from discobolo.scripts.transfers_update_2 import run_transfers_update_2
 
 app = typer.Typer()
 
@@ -9,46 +22,51 @@ app = typer.Typer()
 def run():
     """Run full automation pipeline"""
     typer.echo("▶ Running full automation pipeline")
-    subprocess.run(["bash", "bin/automation_pipeline.sh"])
+
+    project_root = Path(__file__).resolve().parent.parent
+    script_path = project_root / "bin" / "automation_pipeline.sh"
+
+    subprocess.run(["bash", str(script_path)])
 
 
 @app.command()
-def transfers(download1: bool = typer.Option(False), download2: bool = typer.Option(False), update1: bool = typer.Option(False), update2: bool = typer.Option(False)):
+def transfers(
+    download1: bool = typer.Option(False),
+    download2: bool = typer.Option(False),
+    update1: bool = typer.Option(False),
+    update2: bool = typer.Option(False),
+):
     """Download and/or update Bank Movements"""
 
     if download1:
         typer.echo("📥 Downloading bank movements")
-        subprocess.run(
-            ["./venv/bin/python", "scripts/transfers_download.py"])
+        run_transfers_download()
 
     if download2:
         typer.echo("📥 Bank file renaming complete.")
-        subprocess.run(
-            ["./venv/bin/python", "scripts/transfers_download_renaming.py"])
+        run_transfers_download_renaming()
 
     if update1:
         typer.echo("📝 Updating transfer file with data.")
-        subprocess.run(
-            ["./venv/bin/python", "scripts/transfers_update.py"])
+        run_transfers_update()
 
     if update2:
         typer.echo("📝 Updating transfer file with 'Jefe de Grupo'.")
-        subprocess.run(
-            ["./venv/bin/python", "scripts/transfers_update_2.py"])
+        run_transfers_update_2()
 
 
 @app.command()
 def emails():
     """Send payment emails only"""
     typer.echo("✉️ Sending emails...")
-    subprocess.run(["./venv/bin/python", "scripts/email_sending_automate.py"])
+    send_emails()
 
 
 @app.command()
 def sytech():
     """Uploading user's payments into Sytech system."""
     typer.echo("💳 Uploading payments...")
-    subprocess.run(["./venv/bin/python", "scripts/sytech_automate.py"])
+    run_sytech_automation()
 
 
 @app.command()
@@ -56,25 +74,26 @@ def morosos(download: bool = typer.Option(False), update: bool = typer.Option(Fa
     """Download and/or update Morosos file"""
     if download:
         typer.echo("📥 Downloading morosos file...")
-        subprocess.run(["./venv/bin/python", "scripts/morosos_download.py"])
+        run_morosos_download()
 
     if update:
         typer.echo("📝 Updating morosos file...")
-        subprocess.run(["./venv/bin/python", "scripts/morosos_update.py"])
+        run_morosos_update()
 
 
 @app.command()
-def recurrentes(download: bool = typer.Option(False), update: bool = typer.Option(False)):
+def recurrentes(
+    download: bool = typer.Option(False), update: bool = typer.Option(False)
+):
     """Download and/or update Recurrentes file"""
     if download:
         typer.echo("📥 Downloading 'Recurrentes' report...")
-        subprocess.run(
-            ["./venv/bin/python", "scripts/recurrentes_download.py"])
+        subprocess.run(["./venv/bin/python", "scripts/recurrentes_download.py"])
 
     if update:
         typer.echo("📝 Updating 'Recurrentes' file...")
         subprocess.run(["./venv/bin/python", "scripts/recurrentes_update.py"])
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     app()
