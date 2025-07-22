@@ -6,7 +6,7 @@ from discobolo.config.config import BANK_PATH
 TARGET_EXTENSION = ".xlsx"
 
 
-def run_transfers_download_renaming():
+def run_transfers_renaming():
     time.sleep(2)
     files = [
         f
@@ -37,4 +37,4 @@ def run_transfers_download_renaming():
 
 
 if __name__ == "__main__":
-    run_transfers_download_renaming()
+    run_transfers_renaming()

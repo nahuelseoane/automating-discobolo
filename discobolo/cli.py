@@ -9,8 +9,8 @@ from discobolo.scripts.morosos_download import run_morosos_download
 from discobolo.scripts.morosos_update import run_morosos_update
 from discobolo.scripts.sytech_automate import run_sytech_automation
 from discobolo.scripts.transfers_download import run_transfers_download
-from discobolo.scripts.transfers_download_renaming import (
-    run_transfers_download_renaming,
+from discobolo.scripts.transfers_renaming import (
+    run_transfers_renaming,
 )
 from discobolo.scripts.transfers_update import run_transfers_update
 from discobolo.scripts.transfers_update_2 import run_transfers_update_2
@@ -31,20 +31,20 @@ def run():
 
 @app.command()
 def transfers(
-    download1: bool = typer.Option(False),
-    download2: bool = typer.Option(False),
+    download: bool = typer.Option(False),
+    renaming: bool = typer.Option(False),
     update1: bool = typer.Option(False),
     update2: bool = typer.Option(False),
 ):
     """Download and/or update Bank Movements"""
 
-    if download1:
+    if download:
         typer.echo("📥 Downloading bank movements")
         run_transfers_download()
 
-    if download2:
+    if renaming:
         typer.echo("📥 Bank file renaming complete.")
-        run_transfers_download_renaming()
+        run_transfers_renaming()
 
     if update1:
         typer.echo("📝 Updating transfer file with data.")

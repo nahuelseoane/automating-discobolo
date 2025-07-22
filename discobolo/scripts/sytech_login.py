@@ -1,4 +1,5 @@
 import time
+
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 
@@ -12,10 +13,13 @@ def sytech_login(url, username, password, download_dir):
     chrome_options.add_argument("--start-maximized")
     chrome_options.add_argument("--headless=new")
     driver = webdriver.Chrome(options=chrome_options)
-    driver.execute_cdp_cmd("Page.setDownloadBehavior", {
-        "behavior": "allow",
-        "downloadPath": download_dir  # ✅ Force Chrome to use the right folder
-    })
+    driver.execute_cdp_cmd(
+        "Page.setDownloadBehavior",
+        {
+            "behavior": "allow",
+            "downloadPath": download_dir,  # ✅ Force Chrome to use the right folder
+        },
+    )
 
     # Open Sytech
     driver.get(url)
@@ -23,7 +27,9 @@ def sytech_login(url, username, password, download_dir):
     username_input = driver.find_element(By.ID, "user_name")
     password_input = driver.find_element(By.ID, "user_password")
     login_button = driver.find_element(
-        By.XPATH, '//*[@id="loginModal"]/div/div/div[2]/div/form/div[3]/div[2]/div/div/div[2]/button')
+        By.XPATH,
+        '//*[@id="loginModal"]/div/div/div[2]/div/form/div[3]/div[2]/div/div/div[2]/button',
+    )
 
     username_input.send_keys(username)
     password_input.send_keys(password)
