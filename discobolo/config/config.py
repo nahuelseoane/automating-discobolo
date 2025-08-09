@@ -7,7 +7,7 @@ from discobolo.scripts.extra_functions import select_month
 load_dotenv()
 # MONTH VARIABLES
 MONTH_NUMBER = int(os.getenv("MONTH_NUMBER"))
-TENNIS_CLASS_FEE = 8000
+TENNIS_CLASS_FEE = int(os.getenv("TENNIS_CLASS_FEE"))
 KEVIN_MAX = 50000
 
 # EMAIL SETTINGS

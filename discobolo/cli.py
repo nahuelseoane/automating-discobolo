@@ -7,6 +7,8 @@ import typer
 from discobolo.scripts.email_sending_automate import send_emails
 from discobolo.scripts.morosos_download import run_morosos_download
 from discobolo.scripts.morosos_update import run_morosos_update
+from discobolo.scripts.recurrentes_download import run_recurrentes_download
+from discobolo.scripts.recurrentes_update import run_recurrentes_update
 from discobolo.scripts.sytech_automate import run_sytech_automation
 from discobolo.scripts.transfers_download import run_transfers_download
 from discobolo.scripts.transfers_renaming import (
@@ -64,7 +66,7 @@ def emails():
 
 @app.command()
 def sytech():
-    """Uploading user's payments into Sytech system."""
+    """Uploading users's payments into Sytech system."""
     typer.echo("💳 Uploading payments...")
     run_sytech_automation()
 
@@ -88,11 +90,18 @@ def recurrentes(
     """Download and/or update Recurrentes file"""
     if download:
         typer.echo("📥 Downloading 'Recurrentes' report...")
-        subprocess.run(["./venv/bin/python", "scripts/recurrentes_download.py"])
+        run_recurrentes_download()
 
     if update:
         typer.echo("📝 Updating 'Recurrentes' file...")
-        subprocess.run(["./venv/bin/python", "scripts/recurrentes_update.py"])
+        run_recurrentes_update()
+
+
+@app.command()
+def check():
+    """Check if drive folder is accessible"""
+    typer.echo("👌 Checking if driver folder is accessible.")
+    subprocess.run(["bash", "discobolo/scripts/check_and_remount.sh"], check=True)
 
 
 if __name__ == "__main__":

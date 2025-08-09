@@ -244,6 +244,8 @@ def run_transfers_download():
         ver_mas_movimientos()
         ver_mas_movimientos()
 
+        time.sleep(2)
+
         download_button = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located(
                 (

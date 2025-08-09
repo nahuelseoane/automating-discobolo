@@ -15,7 +15,7 @@ python3 discobolo/scripts/backup_files.py || { echo "❌ Error running backup_fi
 
 # Step 3: Bank file downloads
 echo "🔹 Step 3: Downloading bank movements"
-discobolo transfers --download1 --download2 || { echo "❌ Error in transfers download"; exit 1; }
+discobolo transfers --download --renaming || { echo "❌ Error in transfers download"; exit 1; }
 
 # Step 4: Update transfer file
 echo "🔹 Step 4: Updating transfer file"
