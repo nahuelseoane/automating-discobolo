@@ -15,6 +15,8 @@ SMTP_SERVER = os.getenv("SMTP_SERVER")
 SMTP_PORT = int(os.getenv("SMTP_PORT", 465))
 EMAIL_USER = os.getenv("EMAIL_USER")
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
+GMAIL_GROUP_ID = str(os.getenv("GMAIL_GROUP_ID"))
+GMAIL_FALLBACK_ID = os.getenv("GMAIL_FALLBACK_ID")
 
 # PATH SETTINGS
 YEAR = os.getenv("YEAR")

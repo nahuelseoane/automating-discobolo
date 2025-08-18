@@ -172,3 +172,7 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Sensitive credentials
+discobolo/scripts/birthdays/credentials.json
+discobolo/scripts/birthdays/token.json

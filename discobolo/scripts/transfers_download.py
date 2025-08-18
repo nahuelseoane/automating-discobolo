@@ -4,7 +4,14 @@ import tempfile
 import time
 
 from selenium import webdriver
-from selenium.common.exceptions import NoSuchElementException, TimeoutException
+from selenium.common.exceptions import (
+    ElementClickInterceptedException,
+    ElementNotInteractableException,
+    NoSuchElementException,
+    StaleElementReferenceException,
+    TimeoutException,
+)
+from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
@@ -19,37 +26,134 @@ from discobolo.config.config import (
 from discobolo.scripts.extra_functions import clean_download_folder
 
 
-def close_modal_if_present(driver, timeout=5):
-    posibles_ids = ["modal-popup", "sessionExpireWarning"]
-    for modal_id in posibles_ids:
-        try:
-            WebDriverWait(driver, timeout).until(
-                EC.presence_of_element_located((By.ID, modal_id))
-            )
-            print(f"⚠️ Popup '{modal_id}' visible. Intentando cerrarlo.")
+def multiple_users(driver):
+    choosing_user = WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.XPATH, '//*[@id="radioButtonEmpresa0"]'))
+    )
+    driver.execute_script("arguments[0].scrollIntoView(true);", choosing_user)
+    time.sleep(1)
+    choosing_user.click()
+    print("   ✅ Selecting user successful.")
 
-            try:
-                close_btn = driver.find_element(
+    WebDriverWait(driver, 20).until(
+        EC.invisibility_of_element_located((By.ID, "globalLoading"))
+    )
+    # Btn 'continuar'
+    try:
+        login_btn = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable(
+                (
                     By.XPATH,
-                    f"//div[@id='{modal_id}']//button[contains(@class, 'close')]",
+                    "/html/body/div[3]/div/div/div/div/div/div[2]/div/main/div/div/div[2]/div/div[2]/button",
                 )
-            except:
-                try:
-                    close_btn = driver.find_element(
-                        By.XPATH,
-                        f"//div[@id='{modal_id}']//button[@aria-label='Cerrar.']",
-                    )
-                except:
-                    print(f"❌ Modal button wasn't found: '{modal_id}'")
-                    continue
+            )
+        )
+        driver.execute_script("arguments[0].click();", login_btn)
+        print("✅ Clicked first 'Continuar' button.")
+    except (TimeoutException, NoSuchElementException):
+        print("⚠️ Primer botón no encontrado, intentando alternativa...")
+        try:
+            alt_btn = WebDriverWait(driver, 10).until(
+                EC.element_to_be_clickable(
+                    (By.XPATH, "//button[contains(text(), 'Continuar')]")
+                )
+            )
+            driver.execute_script("arguments[0].click();", alt_btn)
+            print("✅ Clicked alternative 'Continuar' button.")
+        except Exception:
+            print("❌ No se pudo hacer click en ningún botón 'Continuar'.")
 
-            driver.execute_script("arguments[0].click();", close_btn)
-            time.sleep(1)
-            print(f"✅ Popup '{modal_id}' closed.")
-        except TimeoutException:
-            print("Timeout modal")
-        except Exception as e:
-            print(f"❌ Error closing modal '{modal_id}': {e}")
+
+def close_modal_if_present(driver, timeout=6):
+    # IDs & typical selectors
+    modal_locators = [
+        (By.ID, "modal-popup"),
+        (By.ID, "sessionExpireWarning"),
+        (By.CSS_SELECTOR, ".modal.show, .box.modal.show"),
+    ]
+    close_selectors = [
+        (By.CSS_SELECTOR, "#modal-popup .btn-close"),
+        (By.CSS_SELECTOR, "#modal-popup [data-bs-dismiss='modal']"),
+        (By.XPATH, "//div[@id='modal-popup']//button[contains(., 'Cerrar')]"),
+        (By.XPATH, "//div[@id='modal-popup']//button[contains(., 'Entendido')]"),
+        (By.XPATH, "//div[@id='modal-popup']//button[contains(., 'Aceptar')]"),
+        (By.CSS_SELECTOR, ".modal.show .btn-close"),
+        (By.CSS_SELECTOR, ".modal.show [data-bs-dismiss='modal']"),
+        (
+            By.XPATH,
+            "//div[contains(@class,'modal') and contains(@class,'show')]//button[contains(., 'Cerrar') or contains(., 'Entendido') or contains(., 'Aceptar')]",
+        ),
+    ]
+
+    end = time.time() + timeout
+    closed_any = False
+
+    while time.time() < end:
+        # Is there a visible modal?
+        visible_modal = None
+        for how, what in modal_locators:
+            for el in driver.find_elements(how, what):
+                try:
+                    if el.is_displayed():
+                        visible_modal = el
+                        break
+                except Exception:
+                    pass
+            if visible_modal:
+                break
+
+        if not visible_modal:
+            if closed_any:
+                print("✅ Modal cerrado y oculto.")
+            return
+
+        print("⚠️ Modal visible. Intentando cerrar…")
+        # Trying differents closing modes
+        clicked = False
+        for how, what in close_selectors:
+            for btn in driver.find_elements(how, what):
+                try:
+                    driver.execute_script("arguments[0].click();", btn)
+                    clicked = True
+                    closed_any = True
+                    break
+                except Exception:
+                    pass
+            if clicked:
+                break
+
+        # If there is no btn, try pressing "esc"
+        if not clicked:
+            try:
+                from selenium.webdriver.common.keys import Keys
+
+                driver.switch_to.active_element.send_keys(Keys.ESCAPE)
+                closed_any = True
+            except Exception:
+                pass
+
+        # Wait till it disappears
+        try:
+            WebDriverWait(driver, 3).until(
+                EC.invisibility_of_element_located(
+                    (By.CSS_SELECTOR, ".modal.show, #modal-popup")
+                )
+            )
+        except Exception:
+            pass
+
+        time.sleep(0.2)
+
+
+def wait_modal_gone(driver, timeout=6):
+    try:
+        WebDriverWait(driver, timeout).until(
+            EC.invisibility_of_element_located(
+                (By.CSS_SELECTOR, ".modal.show, #modal-popup")
+            )
+        )
+    except Exception:
+        pass
 
 
 def click_with_fallback(driver, xpath_list, timeout=15, name="elemento"):
@@ -67,6 +171,33 @@ def click_with_fallback(driver, xpath_list, timeout=15, name="elemento"):
             )
     print(f"❌ No se pudo hacer click en '{name}' con ningún xpath.")
     return False
+
+
+def ver_mas_movimientos(driver):
+    try:
+        mas_movimientos_btn = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.ID, "verMasElementos"))
+        )
+        if mas_movimientos_btn.get_attribute("aria-disabled") == "true":
+            raise Exception("Button is disable (aria-disabled=true)")
+        driver.execute_script(
+            "arguments[0].scrollIntoView({block: 'center'});",
+            mas_movimientos_btn,
+        )
+
+        try:
+            WebDriverWait(driver, 5).until(
+                EC.element_to_be_clickable((By.ID, "verMasElementos"))
+            )
+            mas_movimientos_btn.click()
+            print("✅ 'Ver más movimientos' btn successfully clicked with Selenium.")
+        except:
+            print("⚠️ Selenium could'nt click. Try with JS.")
+            driver.execute_script("arguments[0].click();", mas_movimientos_btn)
+            print("✅ 'Más movimientos' clicked with JS made.")
+        time.sleep(2)
+    except Exception as e:
+        print(f"❌ Error clicking 'Ver más movimientos': {e}")
 
 
 def run_transfers_download():
@@ -137,47 +268,12 @@ def run_transfers_download():
         except Exception:
             print("   ❌ Error login in.")
 
-        def multiple_users():
-            choosing_user = WebDriverWait(driver, 10).until(
-                EC.presence_of_element_located(
-                    (By.XPATH, '//*[@id="radioButtonEmpresa0"]')
-                )
-            )
-            driver.execute_script("arguments[0].scrollIntoView(true);", choosing_user)
-            time.sleep(1)
-            choosing_user.click()
-            print("   ✅ Selecting user successful.")
-
-            WebDriverWait(driver, 20).until(
-                EC.invisibility_of_element_located((By.ID, "globalLoading"))
-            )
-            # Btn 'continuar'
-            try:
-                login_btn = WebDriverWait(driver, 10).until(
-                    EC.element_to_be_clickable(
-                        (
-                            By.XPATH,
-                            "/html/body/div[3]/div/div/div/div/div/div[2]/div/main/div/div/div[2]/div/div[2]/button",
-                        )
-                    )
-                )
-                driver.execute_script("arguments[0].click();", login_btn)
-                print("✅ Clicked first 'Continuar' button.")
-            except (TimeoutException, NoSuchElementException):
-                print("⚠️ Primer botón no encontrado, intentando alternativa...")
-                try:
-                    alt_btn = WebDriverWait(driver, 10).until(
-                        EC.element_to_be_clickable(
-                            (By.XPATH, "//button[contains(text(), 'Continuar')]")
-                        )
-                    )
-                    driver.execute_script("arguments[0].click();", alt_btn)
-                    print("✅ Clicked alternative 'Continuar' button.")
-                except Exception:
-                    print("❌ No se pudo hacer click en ningún botón 'Continuar'.")
+        # If there are multiple users
+        # multiple_users(driver)
 
         # Closing modal if there is one
         close_modal_if_present(driver)
+        wait_modal_gone(driver)
         time.sleep(2)
 
         # Going to 'cuentas'
@@ -203,6 +299,10 @@ def run_transfers_download():
                 driver.get(URL_BANK_CUENTAS)
         time.sleep(2)
 
+        # Closing modal if there is one
+        close_modal_if_present(driver)
+        wait_modal_gone(driver)
+
         click_with_fallback(
             driver,
             [
@@ -212,37 +312,14 @@ def run_transfers_download():
             ],
             name="Botón 'Movimientos'",
         )
+        close_modal_if_present(driver)
+        wait_modal_gone(driver)
 
-        def ver_mas_movimientos():
-            try:
-                mas_movimientos_btn = WebDriverWait(driver, 10).until(
-                    EC.element_to_be_clickable((By.ID, "verMasElementos"))
-                )
-                if mas_movimientos_btn.get_attribute("aria-disabled") == "true":
-                    raise Exception("Button is disable (aria-disabled=true)")
-                driver.execute_script(
-                    "arguments[0].scrollIntoView({block: 'center'});",
-                    mas_movimientos_btn,
-                )
+        ver_mas_movimientos(driver)
+        ver_mas_movimientos(driver)
 
-                try:
-                    WebDriverWait(driver, 5).until(
-                        EC.element_to_be_clickable((By.ID, "verMasElementos"))
-                    )
-                    mas_movimientos_btn.click()
-                    print(
-                        "✅ 'Ver más movimientos' btn successfully clicked with Selenium."
-                    )
-                except:
-                    print("⚠️ Selenium could'nt click. Try with JS.")
-                    driver.execute_script("arguments[0].click();", mas_movimientos_btn)
-                    print("✅ 'Más movimientos' clicked with JS made.")
-                time.sleep(2)
-            except Exception as e:
-                print(f"❌ Error clicking 'Ver más movimientos': {e}")
-
-        ver_mas_movimientos()
-        ver_mas_movimientos()
+        close_modal_if_present(driver)
+        wait_modal_gone(driver)
 
         time.sleep(2)
 
@@ -262,6 +339,9 @@ def run_transfers_download():
 
     finally:
         try:
+            close_modal_if_present(driver)
+            wait_modal_gone(driver)
+
             logout_button = WebDriverWait(driver, 5).until(
                 EC.element_to_be_clickable(
                     (
