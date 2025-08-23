@@ -4,6 +4,7 @@ from pathlib import Path
 
 import typer
 
+from discobolo.scripts.birthdays.birthdays_google import run_birthday_emails
 from discobolo.scripts.email_sending_automate import send_emails
 from discobolo.scripts.morosos_download import run_morosos_download
 from discobolo.scripts.morosos_update import run_morosos_update
@@ -102,6 +103,13 @@ def check():
     """Check if drive folder is accessible"""
     typer.echo("👌 Checking if driver folder is accessible.")
     subprocess.run(["bash", "discobolo/scripts/check_and_remount.sh"], check=True)
+
+
+@app.command()
+def birthdays():
+    """Send birthday's email to each user"""
+    typer.echo("📨🎂 Sending birthday congratulations email...")
+    run_birthday_emails()
 
 
 if __name__ == "__main__":

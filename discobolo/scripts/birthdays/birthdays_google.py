@@ -1,27 +1,72 @@
 from __future__ import print_function
 
+import csv
 import datetime
 import mimetypes
 import os.path
 import pickle
 import smtplib
+
+# from datetime import date
 from email.message import EmailMessage
 from email.utils import make_msgid
+from pathlib import Path
 
+import pandas as pd
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 
 from discobolo.config.config import (
+    CREDENTIALS_PATH,
     EMAIL_PASSWORD,
     EMAIL_USER,
     GMAIL_FALLBACK_ID,
     GMAIL_GROUP_ID,
     SMTP_PORT,
     SMTP_SERVER,
+    TOKEN_PATH,
 )
 
 SCOPES = ["https://www.googleapis.com/auth/contacts.readonly"]
+
+LOG_PATH = Path(__file__).parent / "sent_birthdays.csv"
+# LOG_PATH = Path("sent_birthdays.csv")
+
+
+def ya_enviado(email, today=None):
+    # fecha_hoy = fecha_hoy or date.today().isoformat()
+
+    # if not LOG_PATH.exists():
+    #     return False
+
+    # df = pd.read_csv(LOG_PATH)
+    # enviados_hoy = df[df["fecha_envio"] == fecha_hoy]
+    # return email in enviados_hoy["email"].values
+    today = today or datetime.datetime.now().strftime("%Y-%m-%d")
+    if not LOG_PATH.exists:
+        return False
+
+    with open(LOG_PATH, newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            if row["email"] == email and row["date"] == today:
+                return True
+    return False
+
+
+def registrar_envio(nombre, email, fecha_hoy=None):
+    fecha_hoy = fecha_hoy or datetime.date.today().isoformat()
+
+    nuevo = pd.DataFrame([{"nombre": nombre, "email": email, "fecha_envio": fecha_hoy}])
+
+    if LOG_PATH.exists():
+        actual = pd.read_csv(LOG_PATH)
+        actual = pd.concat([actual, nuevo], ignore_index=True)
+    else:
+        actual = nuevo
+
+    actual.to_csv(LOG_PATH, index=False)
 
 
 def listar_grupos_disponibles(service):
@@ -54,20 +99,20 @@ def obtain_resource_group_name(service, group_name, fallback_resource_name=None)
 ## 1
 def authenticate():
     creds = None
-    if os.path.exists("token.json"):
-        # Ya nos autenticamos antes
-        with open("token.json", "rb") as token:
+    if os.path.exists(TOKEN_PATH):
+        # We already authenticated
+        with open(TOKEN_PATH, "rb") as token:
             creds = pickle.load(token)
-    # Si no hay token o expiró, pedimos login
+    # If no token, login
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            flow = InstalledAppFlow.from_client_secrets_file("credentials.json", SCOPES)
+            flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_PATH, SCOPES)
             creds = flow.run_local_server(port=8080)
 
-        # Guardamos el token
-        with open("token.json", "wb") as token:
+        # Saving token
+        with open(TOKEN_PATH, "wb") as token:
             pickle.dump(creds, token)
     return creds
 
@@ -180,15 +225,21 @@ def send_email(destinatario, name, image_path):
 
 
 ## 3
-if __name__ == "__main__":
+def run_birthday_emails():
     creds = authenticate()
     cumpleañeros = obtain_birthday(creds)
 
     if cumpleañeros:
         for name, email in cumpleañeros:
+            if ya_enviado(email):
+                print(f"⏭️ Ya se envió el email a {name}, se omite.")
+                continue
             print(f"🎉 Hoy cumple {name} ({email})")
-            image_path = "./card_last.png"
-            send_email(email, name, image_path)
+            BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+            image_path = os.path.join(BASE_DIR, "card_last.png")
+            # image_path = "./card_last.png"
+            # send_email(email, name, image_path)
+            registrar_envio(name, email)
 
     else:
         print("📭 Hoy no cumple nadie (según tus contactos).")

@@ -174,5 +174,5 @@ cython_debug/
 .pypirc
 
 # Sensitive credentials
-discobolo/scripts/birthdays/credentials.json
-discobolo/scripts/birthdays/token.json
+secure/
+
