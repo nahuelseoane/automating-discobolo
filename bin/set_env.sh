@@ -1,5 +1,5 @@
 # Move to project root directory
-cd /home/jotaene/proyectos/automating-discobolo
+cd /home/jotaene/projects/automating-discobolo
 
 # Activate virtual environment
 source venv/bin/activate

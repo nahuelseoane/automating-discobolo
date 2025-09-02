@@ -1,19 +1,15 @@
-from __future__ import print_function
-
 import csv
 import datetime
 import mimetypes
 import os.path
-import pickle
 import smtplib
-
-# from datetime import date
 from email.message import EmailMessage
 from email.utils import make_msgid
 from pathlib import Path
 
 import pandas as pd
 from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 
@@ -31,18 +27,9 @@ from discobolo.config.config import (
 SCOPES = ["https://www.googleapis.com/auth/contacts.readonly"]
 
 LOG_PATH = Path(__file__).parent / "sent_birthdays.csv"
-# LOG_PATH = Path("sent_birthdays.csv")
 
 
-def ya_enviado(email, today=None):
-    # fecha_hoy = fecha_hoy or date.today().isoformat()
-
-    # if not LOG_PATH.exists():
-    #     return False
-
-    # df = pd.read_csv(LOG_PATH)
-    # enviados_hoy = df[df["fecha_envio"] == fecha_hoy]
-    # return email in enviados_hoy["email"].values
+def already_sent(email, today=None):
     today = today or datetime.datetime.now().strftime("%Y-%m-%d")
     if not LOG_PATH.exists:
         return False
@@ -55,27 +42,27 @@ def ya_enviado(email, today=None):
     return False
 
 
-def registrar_envio(nombre, email, fecha_hoy=None):
-    fecha_hoy = fecha_hoy or datetime.date.today().isoformat()
+def record_email_sending(name, email, today=None):
+    today = today or datetime.date.today().isoformat()
 
-    nuevo = pd.DataFrame([{"nombre": nombre, "email": email, "fecha_envio": fecha_hoy}])
+    new = pd.DataFrame([{"name": name, "email": email, "date": today}])
 
     if LOG_PATH.exists():
         actual = pd.read_csv(LOG_PATH)
-        actual = pd.concat([actual, nuevo], ignore_index=True)
+        actual = pd.concat([actual, new], ignore_index=True)
     else:
-        actual = nuevo
+        actual = new
 
     actual.to_csv(LOG_PATH, index=False)
 
 
-def listar_grupos_disponibles(service):
+def list_available_groups(service):
     results = service.contactGroups().list(pageSize=100).execute()
-    grupos = results.get("contactGroups", [])
+    groups = results.get("contactGroups", [])
 
     print("📂 Grupos encontrados:")
-    for grupo in grupos:
-        print(f"- {grupo['name']} (ID: {grupo['resourceName']})")
+    for group in groups:
+        print(f"- {group['name']} (ID: {group['resourceName']})")
 
 
 def obtain_resource_group_name(service, group_name, fallback_resource_name=None):
@@ -100,27 +87,26 @@ def obtain_resource_group_name(service, group_name, fallback_resource_name=None)
 def authenticate():
     creds = None
     if os.path.exists(TOKEN_PATH):
-        # We already authenticated
-        with open(TOKEN_PATH, "rb") as token:
-            creds = pickle.load(token)
-    # If no token, login
+        creds = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
+
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
             flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_PATH, SCOPES)
-            creds = flow.run_local_server(port=8080)
+            creds = flow.run_local_server(
+                port=8080, access_type="offline", prompt="consent"
+            )
 
-        # Saving token
-        with open(TOKEN_PATH, "wb") as token:
-            pickle.dump(creds, token)
+        with open(TOKEN_PATH, "w") as token:
+            token.write(creds.to_json())
     return creds
 
 
 ## 2
 def obtain_birthday(creds):
     service = build("people", "v1", credentials=creds)
-    listar_grupos_disponibles(service)
+    # list_available_groups(service)
     contact_group_id = obtain_resource_group_name(
         service, GMAIL_GROUP_ID, fallback_resource_name=GMAIL_FALLBACK_ID
     )
@@ -136,7 +122,7 @@ def obtain_birthday(creds):
         .execute()
     )
 
-    cumpleañeros = []
+    birthdays = []
 
     for person in results.get("connections", []):
         groups = person.get("memberships", [])
@@ -158,20 +144,18 @@ def obtain_birthday(creds):
             mes_dia = f"{cumple.get('month'):02d}-{cumple.get('day'):02d}"
             hoy = datetime.datetime.today().strftime("%m-%d")
             if mes_dia == hoy:
-                cumpleañeros.append((name, email))
+                birthdays.append((name, email))
 
-    return cumpleañeros
+    return birthdays
 
 
-def send_email(destinatario, name, image_path):
+def send_email(addressee, name, image_path):
     msg = EmailMessage()
     msg["Subject"] = f"🎉 ¡Feliz Cumple {name}!"
     msg["From"] = EMAIL_USER
-    msg["To"] = destinatario
+    msg["To"] = addressee
 
-    image_cid = make_msgid(
-        domain="discobolo.club"
-    )  # podés poner cualquier dominio válido
+    image_cid = make_msgid(domain="discobolo.club")
     image_cid_stripped = image_cid[1:-1]
 
     msg.set_content(f"""
@@ -208,7 +192,6 @@ def send_email(destinatario, name, image_path):
         subtype="html",
     )
 
-    # Detectar el tipo MIME de la imagen
     mime_type, _ = mimetypes.guess_type(image_path)
     maintype, subtype = mime_type.split("/")
 
@@ -221,25 +204,28 @@ def send_email(destinatario, name, image_path):
         smtp.login(EMAIL_USER, EMAIL_PASSWORD)
         smtp.send_message(msg)
 
-    print(f"📧 Email enviado a {name} ({destinatario})")
+    print(f"📧 Email enviado a {name} ({addressee})")
 
 
 ## 3
 def run_birthday_emails():
     creds = authenticate()
-    cumpleañeros = obtain_birthday(creds)
+    birthdays = obtain_birthday(creds)
 
-    if cumpleañeros:
-        for name, email in cumpleañeros:
-            if ya_enviado(email):
+    if birthdays:
+        for name, email in birthdays:
+            if already_sent(email):
                 print(f"⏭️ Ya se envió el email a {name}, se omite.")
                 continue
             print(f"🎉 Hoy cumple {name} ({email})")
             BASE_DIR = os.path.dirname(os.path.abspath(__file__))
             image_path = os.path.join(BASE_DIR, "card_last.png")
-            # image_path = "./card_last.png"
-            # send_email(email, name, image_path)
-            registrar_envio(name, email)
+            send_email(email, name, image_path)
+            record_email_sending(name, email)
 
     else:
         print("📭 Hoy no cumple nadie (según tus contactos).")
+
+
+if __name__ == "__main__":
+    run_birthday_emails()

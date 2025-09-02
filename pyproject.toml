@@ -12,10 +12,17 @@ dependencies = [
     "secure-smtplib",
     "pandas",
     "openpyxl",
-    "selenium",
-    "requests",
+    "selenium>=4.35.0",
+    "requests>=2.32.0",
     "python-dotenv",
     "typer[all]"
+]
+
+[project.optional-dependencies]
+birthdays = [
+  "google-auth",
+  "google-auth-oauthlib",
+  "google-api-python-client",
 ]
 
 [project.scripts]

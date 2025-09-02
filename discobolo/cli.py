@@ -4,7 +4,6 @@ from pathlib import Path
 
 import typer
 
-from discobolo.scripts.birthdays.birthdays_google import run_birthday_emails
 from discobolo.scripts.email_sending_automate import send_emails
 from discobolo.scripts.morosos_download import run_morosos_download
 from discobolo.scripts.morosos_update import run_morosos_update
@@ -108,6 +107,8 @@ def check():
 @app.command()
 def birthdays():
     """Send birthday's email to each user"""
+    from discobolo.scripts.birthdays.birthdays_google import run_birthday_emails
+
     typer.echo("📨🎂 Sending birthday congratulations email...")
     run_birthday_emails()
 

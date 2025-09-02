@@ -1,5 +1,7 @@
 def run_sytech_automation():
     import time
+    import os
+    from shutil import which
 
     import pandas as pd
     from selenium import webdriver
@@ -16,6 +18,9 @@ def run_sytech_automation():
     )
     from discobolo.scripts.extra_functions import filter_positive_payments
     from discobolo.scripts.payment_load_function import payment_load
+
+    PAYMENTS_PATH = os.path.abspath(PAYMENTS_PATH)
+    TRANSFER_FILE = os.path.abspath(TRANSFER_FILE)
 
     df, df_filtered = filter_positive_payments(TRANSFER_FILE, SHEET_NAME)
 
@@ -42,6 +47,15 @@ def run_sytech_automation():
         f"   🔸Otros: {concept_counts_dict.get('OTROS')}\n",
     )
 
+    # kill leftovers
+    os.system("pkill -f chromedriver >/dev/null 2>&1 || true")
+    os.system("pkill -f 'chrome.*discobolo-chrome-' >/dev/null 2>&1 || true")
+
+    # Ensure runtime dir (Chrome sandbox needs 0700)
+    os.environ.setdefault("XDG_RUNTIME_DIR", f"/tmp/runtime-{os.getuid()}")
+    os.makedirs(os.environ["XDG_RUNTIME_DIR"], exist_ok=True)
+    os.chmod(os.environ["XDG_RUNTIME_DIR"], 0o700)
+
     chrome_options = webdriver.ChromeOptions()
     prefs = {
         "download.default_directory": PAYMENTS_PATH,
@@ -50,23 +64,40 @@ def run_sytech_automation():
         "plugins.always_open_pdf_externally": True,
         "profile.default_content_setting_values.popups": 0,
         "profile.default_content_setting_values.automatic_downloads": 1,
+        "profile.default_content_settings.popups": 0,
+        "safebrowsing.enabled": True,
+        "profile.default_content_setting_values.notifications": 2,
     }
     chrome_options.add_experimental_option("prefs", prefs)
 
-    chrome_options.add_argument("--disable-popup-blocking")
-    chrome_options.add_argument("--disable-features=InfiniteSessionRestore")
-    chrome_options.add_argument("--disable-features=AutoReload,tab-hover-cards")
-    chrome_options.add_argument("--force-app-mode")
-    chrome_options.add_argument("--disable-site-isolation-trials")
-    chrome_options.add_argument("--new-window")
-    chrome_options.add_argument("--start-maximized")
+    # Headless-safe flags
     chrome_options.add_argument("--headless=new")
+    chrome_options.add_argument("--remote-debugging-pipe")
+    chrome_options.add_argument("--window-size=1920,1080")
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-extensions")
+    chrome_options.add_argument("--disable-popup-blocking")
+    
+    # Prefer system Chrome/Chromium (like you did for transfers)
+    binary = which("google-chrome") or which("chromium-browser") or which("chromium")
+    if binary:
+        chrome_options.binary_location = binary
 
     driver = webdriver.Chrome(options=chrome_options)
 
-    driver.execute_cdp_cmd(
-        "Page.setDownloadBehavior", {"behavior": "allow", "downloadPath": PAYMENTS_PATH}
-    )
+    # Enable downloads (new CDP, with fallback)
+    try:
+        driver.execute_cdp_cmd(
+            "Browser.setDownloadBehavior",
+            {"behavior": "allow", "downloadPath": PAYMENTS_PATH},
+        )
+    except Exception:
+        driver.execute_cdp_cmd(
+            "Page.setDownloadBehavior",
+            {"behavior": "allow", "downloadPath": PAYMENTS_PATH},
+        )
 
     driver.get(URL_SYTECH_MAIN)
     time.sleep(3)

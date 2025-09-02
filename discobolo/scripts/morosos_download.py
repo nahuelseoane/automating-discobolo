@@ -1,23 +1,26 @@
-def run_morosos_download():
-    import os
-    import time
 
-    from selenium.common.exceptions import NoSuchElementException, TimeoutException
-    from selenium.webdriver.common.by import By
-    from selenium.webdriver.support import expected_conditions as EC
-    from selenium.webdriver.support.ui import WebDriverWait
+import os
+import time
 
-    from discobolo.config.config import (
-        MOROSOS_DOWNLOAD,
-        R10240,
-        SYTECH_PASSWORD,
-        SYTECH_USER,
-        URL_SYTECH_MAIN,
-    )
-    from discobolo.scripts.extra_functions import clean_download_folder
-    from discobolo.scripts.sytech_login import sytech_login
+from selenium.common.exceptions import NoSuchElementException, TimeoutException
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 
-    def morosos_report(file, driver):
+from discobolo.config.config import (
+    MOROSOS_DOWNLOAD,
+    R10240,
+    SYTECH_PASSWORD,
+    SYTECH_USER,
+    URL_SYTECH_MAIN,
+)
+from discobolo.scripts.extra_functions import clean_download_folder
+from discobolo.scripts.sytech_login import sytech_login
+
+MOROSOS_DOWNLOAD = os.path.abspath(MOROSOS_DOWNLOAD)
+
+def morosos_report(file, driver):
+    try:
         error_attempts = 0
         driver.get(R10240)
         time.sleep(2)
@@ -68,16 +71,9 @@ def run_morosos_download():
                 clean_download_folder(MOROSOS_DOWNLOAD)
                 morosos_report(MOROSOS_DOWNLOAD, driver)
 
-    try:
-        clean_download_folder(MOROSOS_DOWNLOAD)
-        driver = sytech_login(
-            URL_SYTECH_MAIN, SYTECH_USER, SYTECH_PASSWORD, MOROSOS_DOWNLOAD
-        )
-        morosos_report(MOROSOS_DOWNLOAD, driver)
-
+        
     except Exception as e:
-        print(f"❌ Error downloading 'Recurrentes' report: {e}")
-
+        print(f"❌ General error: {e}")
     finally:
         try:
             driver.get(URL_SYTECH_MAIN)
@@ -91,7 +87,12 @@ def run_morosos_download():
             logout_btn.click()
 
             print("  ✅ Logout successfully")
-            driver.quit()
+            try:
+                if driver is not None:
+                    driver.quit()
+            except Exception as e:
+                print(f"⚠️ Could not quit driver cleanly: {e}")
+            # driver.quit()
             print("   ✅ Selenium closed")
         except TimeoutException as te:
             print(f"❌ Timeout waiting for element: {te}")
@@ -99,3 +100,14 @@ def run_morosos_download():
             print(f"❌ Element not found: {ne}")
         except Exception as e:
             print(f"❌ General error logging out of Sytech: {e}")
+
+def run_morosos_download():
+    try:
+        clean_download_folder(MOROSOS_DOWNLOAD)
+        driver = sytech_login(
+            URL_SYTECH_MAIN, SYTECH_USER, SYTECH_PASSWORD, MOROSOS_DOWNLOAD
+        )
+        morosos_report(MOROSOS_DOWNLOAD, driver)
+
+    except Exception as e:
+        print(f"❌ Error downloading 'Morosos' report: {e}")

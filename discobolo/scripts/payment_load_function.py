@@ -1,7 +1,9 @@
 import os
 import time
 import traceback
+import requests
 import pandas as pd
+from pathlib import Path
 from discobolo.scripts.extra_functions import update_loaded_status, extract_operation_number, extract_date, sanitize_filename
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support.ui import WebDriverWait
@@ -11,6 +13,39 @@ from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from discobolo.config.config import URL_SYTECH_COBRANZAS
 
+def wait_for_new_pdf(dirpath, before, timeout=40):
+    end = time.time() + timeout
+    while time.time() < end:
+        for p in Path(dirpath).glob("*.pdf"):
+            if p.name not in before and not p.name.endswith(".crdownload"):
+                s1 = p.stat().st_size
+                time.sleep(0.5)
+                s2 = p.stat().st_size
+                if s1 == s2 and s2 > 0:
+                    return str(p)
+        time.sleep(0.3)
+    return None
+
+def _ensure_on_cobranzas(driver, main_handle, url_cobranzas, timeout=10):
+    # Close any extra tabs (e.g., PDF) and switch back to main handle
+    for h in list(driver.window_handles):
+        if h != main_handle:
+            try:
+                driver.switch_to.window(h)
+                driver.close()
+            except Exception:
+                pass
+    driver.switch_to.window(main_handle)
+
+    # If the search box isn't there, re-navigate
+    try:
+        WebDriverWait(driver, 2).until(EC.presence_of_element_located((By.ID, "p_cliente")))
+        return
+    except SelTimeout:
+        pass
+
+    driver.get(url_cobranzas)
+    WebDriverWait(driver, timeout).until(EC.presence_of_element_located((By.ID, "p_cliente")))
 
 def payment_load(df, driver, download_root, excel_file, sheet_name, year):
     original_window = driver.current_window_handle
@@ -24,8 +59,20 @@ def payment_load(df, driver, download_root, excel_file, sheet_name, year):
 
     # Step 2: Navigate to the payment entry page
     driver.get(URL_SYTECH_COBRANZAS)
-    time.sleep(2)
+    # time.sleep(2)
+    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.ID, "p_cliente")))
+    main_sytech_handle = driver.current_window_handle
     for index, row in df.iterrows():
+        # 👇 Ensure the page is ready before using it
+        try:
+            WebDriverWait(driver, 3).until(
+                EC.presence_of_element_located((By.ID, "p_cliente"))
+            )
+        except:
+            driver.refresh()
+            WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.ID, "p_cliente"))
+            )
         # Checking if Payment already enter
         user = row["Jefe de Grupo"]
         seq, amount = row['N° Secuencia'], row['Importe']
@@ -188,72 +235,52 @@ def payment_load(df, driver, download_root, excel_file, sheet_name, year):
             # 9. "Agregar" button
             agregar_button = driver.find_element(By.ID, "keyAgregarTransf")
             agregar_button.click()
+            before=set(os.listdir(download_root))
             # 10. Grabar Cobranza
             grabar_button = driver.find_element(By.ID, "keyGrabar")
             grabar_button.click()
-            time.sleep(8)
+            time.sleep(4)
 
             # 11. Pop-up Payment Receipt
             try:
-                # Detect if a new tab is open
-                WebDriverWait(driver, 5).until(
-                    lambda d: len(d.window_handles) > 1)
-
-                try:
-                    # ✅ Ensure Chrome has focus
-                    driver.execute_script("window.focus();")
-
-                    # ✅ Find the <body> element and click it to focus
-                    body_element = driver.find_element(By.TAG_NAME, "body")
-                    body_element.click()
-                    time.sleep(1)  # Wait for focus
-
-                    driver.execute_script(
-                        "document.execCommand('SaveAs', true, 'receipt.pdf');")
-                    # print("✅ Executed JavaScript SaveAs command.")
-
-                except Exception as e:
-                    print(f"❌ Error saving file: {str(e)}")
-
-                # Renaming file
-                files = sorted(os.listdir(download_root), key=lambda f: os.path.getctime(
-                    os.path.join(download_root, f)), reverse=True)
-                if files:
-                    try:
-                        latest_file = files[0]
-                        original_path = os.path.join(
-                            download_root, latest_file)
-
-                        client_name = user
-                        sanitized_name = sanitize_filename(client_name)
-                        new_filename = f"{sanitized_name}_{transaction_number}.pdf"
-                        if observations:
-                            new_filename = f"{observations}_{transaction_number}.pdf"
-                        new_path = os.path.join(download_root, new_filename)
-
-                        os.rename(original_path, new_path)
-
-                        update_loaded_status(excel_file, sheet_name, seq)
-                    except Exception as e:
-                        print(f"❌ Problem while changing file name: {e}")
-                else:
-                    print("❌ No files found in the download folder.")
-
-                # Close receipt window
                 if len(driver.window_handles) > 1:
-                    # ✅ The last opened tab is usually the PDF
-                    pdf_tab = driver.window_handles[-1]
-                    driver.switch_to.window(pdf_tab)  # ✅ Switch to the PDF tab
-                    driver.close()  # ✅ Close the PDF viewer
+                    driver.switch_to.window(driver.window_handles[-1])
+                    time.sleep(2)
 
-                    # ✅ Return to the main Sytech tab
-                    driver.switch_to.window(original_window)
-                    driver.refresh()
-                    time.sleep(1)
-                else:
-                    print("⚠️ No extra tab detected for PDF.")
+                    # Optional: print to debug what it opened
+                    # print("PDF TAB URL:", driver.current_url)
 
-                print(f"  ✅ {user} Payment successfully loaded - {seq}")
+
+                # Wait for the actual file to load
+                pdf_url = driver.current_url
+                try:
+                    # Build a cookie jar for requests
+                    cookies = {c['name']: c['value'] for c in driver.get_cookies()}
+                    r = requests.get(pdf_url, cookies=cookies, timeout=60)
+                    r.raise_for_status()
+
+                    # Build the filename
+                    base = observations if observations else user
+                    safe_base = sanitize_filename(base)
+                    new_name = f"{safe_base}_{transaction_number}.pdf"
+
+                    # Save PDF
+                    dest_path = os.path.join(download_root, new_name)
+
+                    with open(dest_path, "wb") as f:
+                        f.write(r.content)
+
+                    update_loaded_status(excel_file, sheet_name, seq)
+                    print(f"  ✅ {user} Payment successfully loaded - {seq} → {new_name}")
+                except Exception as e:
+                    print(f"❌ Could not download PDF via requests: {e}")
+                finally:
+                    # Always return to Cobranzas page
+                    driver.get(URL_SYTECH_COBRANZAS)
+                    WebDriverWait(driver, 10).until(
+                        EC.presence_of_element_located((By.ID, "p_cliente"))
+                    )
+
             except Exception as e:
                 print(f"❌ Error downloading receipt: {str(e)}")
                 print("⚒️ Full error detail:")

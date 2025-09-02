@@ -2,6 +2,7 @@ import os
 import shutil
 import tempfile
 import time
+import glob
 
 from selenium import webdriver
 from selenium.common.exceptions import (
@@ -24,7 +25,24 @@ from discobolo.config.config import (
     URL_BANK_MAIN,
 )
 from discobolo.scripts.extra_functions import clean_download_folder
+from shutil import which
 
+# Normalize to absolute path
+BANK_PATH = os.path.abspath(BANK_PATH)
+
+
+def wait_for_downloads(dir_path, timeout=60):
+    """
+    Wait until Chrome has no *.crdownload files and a real file.
+    """
+    end = time.time() + timeout
+    while time.time() < end:
+        if not glob.glob(os.path.join(dir_path, "*.crdownload")):
+            files = [f for f in os.listdir(dir_path) if not f.endswith(".tmp")]
+            if files:
+                return True
+        time.sleep(0.5)
+    return False
 
 def multiple_users(driver):
     choosing_user = WebDriverWait(driver, 10).until(
@@ -201,8 +219,20 @@ def ver_mas_movimientos(driver):
 
 
 def run_transfers_download():
+    # Ensure download dir and start clean
+    os.makedirs(BANK_PATH, exist_ok=True)
     clean_download_folder(BANK_PATH)
 
+    # kill leftovers
+    os.system("pkill -f chromedriver >/dev/null 2>&1 || true")
+    os.system("pkill -f 'chrome.*discobolo-chrome-' >/dev/null 2>&1 || true")
+
+    # Ensure runtime dir exists
+    os.environ.setdefault("XDG_RUNTIME_DIR", f"/tmp/runtime-{os.getuid()}")
+    os.makedirs(os.environ["XDG_RUNTIME_DIR"], exist_ok=True)
+    os.chmod(os.environ["XDG_RUNTIME_DIR"], 0o700)
+
+    # Build Chrome options
     chrome_options = webdriver.ChromeOptions()
     prefs = {
         "download.default_directory": BANK_PATH,
@@ -212,41 +242,53 @@ def run_transfers_download():
         "profile.default_content_setting_values.automatic_downloads": 1,
         "profile.default_content_settings.popups": 0,
         "safebrowsing.enabled": True,
-        "profile.default_content_setting_value.notifications": 2,
+        "profile.default_content_setting_values.notifications": 2,
     }
     chrome_options.add_experimental_option("prefs", prefs)
 
-    chrome_options.add_argument("--disable-popup-blocking")
-    chrome_options.add_argument("--disable-features=InfiniteSessionRestore")
-    chrome_options.add_argument("--disable-features=AutoReload,tab-hover-cards")
-    chrome_options.add_argument("--force-app-mode")
-    chrome_options.add_argument("--disable-site-isolation-trials")
-    chrome_options.add_argument("--new-window")
-    chrome_options.add_argument("--start-maximized")
-    chrome_options.add_argument("--safebrowsing-disable-download-protection")
+    # Headless-safe flags
     chrome_options.add_argument("--headless=new")
+    chrome_options.add_argument("--disable-popup-blocking")
+    chrome_options.add_argument("--window-size=1920,1080")
     chrome_options.add_argument("--disable-gpu")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--enable-logging")
+    chrome_options.add_argument("--remote-debugging-pipe")
+    chrome_options.add_argument("--disable-popup-blocking")
+    chrome_options.add_argument("--disable-extensions")
     chrome_options.add_argument("--v=1")
 
-    temp_user_data_dir = tempfile.mkdtemp()
+    # Prefer system Chrome/Chromium if present
+    binary = which("google-chrome") or which("chromium-browser") or which("chromium")
+    if binary:
+        chrome_options.binary_location = binary
 
-    driver = webdriver.Chrome(options=chrome_options)
-    driver.execute_cdp_cmd(
-        "Page.setDownloadBehavior", {"behavior": "allow", "downloadPath": BANK_PATH}
-    )
-
+    driver = None
     try:
+        driver = webdriver.Chrome(options=chrome_options)
+
+        # Allow downloads
+        try:
+            # New CDP
+            driver.execute_cdp_cmd(
+                "Browser.setDownloadBehavior", {"behavior": "allow", "downloadPath": BANK_PATH}
+            )
+        except Exception:
+            # Old build
+            driver.execute_cdp_cmd(
+                "Page.setDownloadBehavior",
+                {"behavior": "allow", "downloadPath": BANK_PATH}
+            )
+
         print("   ▶️ Entering bank page.")
         driver.get(URL_BANK_MAIN)
-        time.sleep(2)
+        # time.sleep(2)
 
         WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.ID, "username"))
         ).send_keys(BANK_USER)
-        time.sleep(1)
+        # time.sleep(1)
         print("   ✅ Username selected")
 
         WebDriverWait(driver, 10).until(
@@ -263,7 +305,8 @@ def run_transfers_download():
                     )
                 )
             )
-            login_button.click()
+            # login_button.click()
+            driver.execute_script("arguments[0].click();", login_button)
             print("   ✅ Login successful.")
         except Exception:
             print("   ❌ Error login in.")
@@ -276,7 +319,7 @@ def run_transfers_download():
         wait_modal_gone(driver)
         time.sleep(2)
 
-        # Going to 'cuentas'
+        # Going to 'Cuentas'
         try:
             cuentas_btn = WebDriverWait(driver, 10).until(
                 EC.element_to_be_clickable(
@@ -333,48 +376,53 @@ def run_transfers_download():
         )
         driver.execute_script("arguments[0].click();", download_button)
         time.sleep(10)
+        if wait_for_downloads(BANK_PATH, timeout=90):
+            print("  ✅ Download completed")
+        else:
+            print("  ❌ Download timeout (check selectors / permissions)")
 
     except Exception as e:
         print(f"Error during automation: {e}")
 
     finally:
         try:
-            close_modal_if_present(driver)
-            wait_modal_gone(driver)
-
-            logout_button = WebDriverWait(driver, 5).until(
-                EC.element_to_be_clickable(
-                    (
-                        By.CSS_SELECTOR,
-                        "#root > div > div > div > div > div > div:nth-child(1) > div > header > div > div > div > div.box.col-2.col-md-6 > div > button",
-                    )
-                )
-            )
-            logout_button.click()
-            print("  ✅ Logout successfully")
-            shutil.rmtree(temp_user_data_dir)
-            driver.quit()
-            print("  ✅ Selenium closed.")
-        except Exception as e:
-            print(f"  ⚠️ Logout failed or already logged out. {e}")
-            try:
-                driver.get(URL_BANK_CUENTAS)
-                time.sleep(5)
-                logout_button = WebDriverWait(driver, 5).until(
-                    EC.element_to_be_clickable(
-                        (
-                            By.CSS_SELECTOR,
-                            "#root > div > div > div > div > div > div:nth-child(1) > div > header > div > div > div > div.box.col-2.col-md-6 > div > button",
+            if driver:
+                try:
+                    close_modal_if_present(driver)
+                    wait_modal_gone(driver)
+                    logout_button = WebDriverWait(driver, 5).until(
+                        EC.element_to_be_clickable(
+                            (
+                                By.CSS_SELECTOR,
+                                "#root > div > div > div > div > div > div:nth-child(1) > div > header > div > div > div > div.box.col-2.col-md-6 > div > button",
+                            )
                         )
                     )
-                )
-                logout_button.click()
-                print("  ✅ Logout successfully")
-                shutil.rmtree(temp_user_data_dir)
+                    # logout_button.click()
+                    driver.execute_script("arguments[0].click();", logout_button)
+                    print("  ✅ Logout successfully")
+                except Exception as e:
+                    print(f"  ⚠️ Logout failed or already logged out. {e}")
+                    try:
+                        driver.get(URL_BANK_CUENTAS)
+                        time.sleep(5)
+                        logout_button = WebDriverWait(driver, 5).until(
+                            EC.element_to_be_clickable(
+                                (
+                                    By.CSS_SELECTOR,
+                                    "#root > div > div > div > div > div > div:nth-child(1) > div > header > div > div > div > div.box.col-2.col-md-6 > div > button",
+                                )
+                            )
+                        )
+                        # logout_button.click()
+                        driver.execute_script("arguments[0].click();", logout_button)
+                        print("  ✅ Logout successfully (2nd try)")
+                    except Exception as e:
+                        print(f"Second try logout error: {e}")
+        finally:
+            if driver:
                 driver.quit()
-                print("  ✅ Selenium closed.")
-            except Exception as e:
-                print(f"Second try logout error: {e}")
+            print("  ✅ Selenium closed.")
 
 
 if __name__ == "__main__":

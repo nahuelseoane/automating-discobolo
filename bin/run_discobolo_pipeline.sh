@@ -1,5 +1,5 @@
 #!/bin/bash
-PROJECT_DIR="/home/jotaene/proyectos/automating-discobolo"
+PROJECT_DIR="/home/jotaene/projects/automating-discobolo"
 
 # Move to project root directory
 cd "$PROJECT_DIR"
