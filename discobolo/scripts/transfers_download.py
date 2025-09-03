@@ -33,16 +33,67 @@ BANK_PATH = os.path.abspath(BANK_PATH)
 
 def wait_for_downloads(dir_path, timeout=60):
     """
-    Wait until Chrome has no *.crdownload files and a real file.
+    Wait until Chrome finishes at least one NEW download in dir_path.
+    - `before`: set of filenames present BEFORE triggering the download.
+                If None, it will be computed on first call (less strict).
+    Returns: str path to the new finished file, or None on timeout.
     """
+    dirp = Path(dir_path)
+    dirp.mkdir(parents=True, exist_ok=True)
+
+    if before is None:
+        before = {p.name for p in dirp.iterdir() if p.is_file()}
+
     end = time.time() + timeout
     while time.time() < end:
-        if not glob.glob(os.path.join(dir_path, "*.crdownload")):
-            files = [f for f in os.listdir(dir_path) if not f.endswith(".tmp")]
-            if files:
-                return True
-        time.sleep(0.5)
-    return False
+        # ignore temp/partial files
+        candidates = [
+            p for p in dirp.iterdir()
+            if p.is_file()
+            and p.suffix not in {".crdownload", ".tmp", ".part"}
+            and p.name not in before
+        ]
+        if candidates:
+            # settle check: size must stop changing
+            p = max(candidates, key=lambda x: x.stat().st_mtime)
+            s1 = p.stat().st_size
+            time.sleep(0.5)
+            s2 = p.stat().st_size
+            if s1 == s2 and s2 > 0:
+                return str(p)
+        time.sleep(0.25)
+    return None
+    # """
+    # Wait until Chrome has no *.crdownload files and a real file.
+    # """
+    # end = time.time() + timeout
+    # while time.time() < end:
+    #     if not glob.glob(os.path.join(dir_path, "*.crdownload")):
+    #         files = [f for f in os.listdir(dir_path) if not f.endswith(".tmp")]
+    #         if files:
+    #             return True
+    #     time.sleep(0.5)
+    # return False
+
+def wait_for_new_file(dir_path, before, suffixes=(".xlsx", ".csv", ".pdf"), timeout=60):
+    from pathlib import Path
+    import time
+    dirp = Path(dir_path)
+    dirp.mkdir(parents=True, exist_ok=True)
+    end = time.time() + timeout
+    while time.time() < end:
+        for p in dirp.iterdir():
+            if (p.is_file()
+                and p.suffix.lower() in suffixes
+                and not p.name.endswith(".crdownload")
+                and p.name not in before):
+                s1 = p.stat().st_size
+                time.sleep(0.5)
+                s2 = p.stat().st_size
+                if s1 == s2 and s2 > 0:
+                    return str(p)
+        time.sleep(0.25)
+    return None
 
 def multiple_users(driver):
     choosing_user = WebDriverWait(driver, 10).until(
@@ -283,12 +334,11 @@ def run_transfers_download():
 
         print("   ▶️ Entering bank page.")
         driver.get(URL_BANK_MAIN)
-        # time.sleep(2)
 
         WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.ID, "username"))
         ).send_keys(BANK_USER)
-        # time.sleep(1)
+
         print("   ✅ Username selected")
 
         WebDriverWait(driver, 10).until(
@@ -305,7 +355,7 @@ def run_transfers_download():
                     )
                 )
             )
-            # login_button.click()
+            
             driver.execute_script("arguments[0].click();", login_button)
             print("   ✅ Login successful.")
         except Exception:
@@ -327,6 +377,7 @@ def run_transfers_download():
                 )
             )
             cuentas_btn.click()
+            print("  ✅ Btn 'Cuentas' successfully clicked.")
         except Exception:
             print("Error clicking on 'Cuentas'")
             try:
@@ -336,7 +387,7 @@ def run_transfers_download():
                     )
                 )
                 cuentas_btn.click()
-                print("Second try successful - button 'Cuentas' clicked.")
+                print("  ✅Second try successful - button 'Cuentas' clicked.")
             except Exception:
                 print("2do try - Error clicking on 'Cuentas'.")
                 driver.get(URL_BANK_CUENTAS)
@@ -366,6 +417,20 @@ def run_transfers_download():
 
         time.sleep(2)
 
+        # Download button
+        clicked = click_with_fallback(
+            driver,
+            [
+                "//*[@id='cuentasMovimientosContext']//button[contains(@class,'btn-icon-primary')]",
+                "//button[contains(., 'Descargar')]",
+                "//button[contains(., 'Exportar')]",
+                "//button[@aria-label[contains(., 'Descargar')]]",
+                "//button[.//i[contains(@class, 'download') or contains(@class, 'bi-download')]]",
+            ],
+            name="Btn 'Descargar/Exportar'",
+        )
+        if not clicked:
+            raise RuntimeError("Btn 'descargar' couldn't be clicked.")
         download_button = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located(
                 (
@@ -376,10 +441,20 @@ def run_transfers_download():
         )
         driver.execute_script("arguments[0].click();", download_button)
         time.sleep(10)
-        if wait_for_downloads(BANK_PATH, timeout=90):
-            print("  ✅ Download completed")
-        else:
-            print("  ❌ Download timeout (check selectors / permissions)")
+
+        before = {p.name for p in Path(BANK_PATH).iterdir() if p.is_file()}
+
+        new_file = wait_for_downloads(BANK_PATH, before=before, timeout=60)
+        # new_file = wait_for_new_file(BANK_PATH, before=None, suffixes=".xlsx", timeout=60)
+        if not new_file:
+            debug = [p.name for p in Path(Bank_Path).iterdir()]
+            raise TimeoutError("Download timeout (no new finished file detected).")
+        print("✅ Downloaded:", new_file)
+
+        # if wait_for_downloads(BANK_PATH, timeout=90):
+        #     print("  ✅ Download completed")
+        # else:
+        #     print("  ❌ Download timeout (check selectors / permissions)")
 
     except Exception as e:
         print(f"Error during automation: {e}")
