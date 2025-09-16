@@ -101,6 +101,24 @@ BANK_PASSWORD=your_bank_password
 
 ---
 
+## 🧩 Chrome Version Requirement
+
+To ensure downloads and headless mode work properly, this project uses:
+
+> ✅ `google-chrome-stable` version **116.0.5845.140-1** (installed via `.deb`)
+
+Using Snap Chromium may cause issues with:
+- ❌ `Page.setDownloadBehavior` not working
+- ❌ Headless mode throwing `DevToolsActivePort` error
+
+To install the working version:
+```bash
+wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+sudo dpkg -i google-chrome-stable_current_amd64.deb
+sudo apt-mark hold google-chrome-stable
+
+---
+
 ## 📝 Notes
 - Don’t commit your `.env` file — it’s already ignored via `.gitignore`.
 - Use `config.py` to load and centralize environment variables.

@@ -5,7 +5,7 @@ import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.utils import get_column_letter
 
-from discobolo.config.config import BANK_FILE, MONTH, TRANSFER_FILE
+from discobolo.config.config import BANK_DOWNLOAD_FILE, MONTH, TRANSFER_FILE
 
 
 def run_transfers_update():
@@ -27,7 +27,7 @@ def run_transfers_update():
     current_month_sheet = month_names[current_month_number - 1]
     print(f"   📂 Updating sheet: {current_month_sheet}")
 
-    df_bank = pd.read_excel(BANK_FILE, skiprows=1, engine="openpyxl")
+    df_bank = pd.read_excel(BANK_DOWNLOAD_FILE, skiprows=1, engine="openpyxl")
     df_bank = df_bank.drop(columns=["Descripción"])
     df_bank.columns = df_bank.columns.str.strip()
     df_bank = df_bank.rename(

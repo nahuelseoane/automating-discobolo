@@ -1,7 +1,6 @@
 import os
-import time
-
 from pathlib import Path
+import time
 
 from selenium import webdriver
 from selenium.common.exceptions import (
@@ -12,24 +11,57 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from dotenv import load_dotenv
-load_dotenv()
 from discobolo.config.config import (
     BANK_PASSWORD,
-    BANK_DOWNLOAD_PATH,
+    BANK_PATH,
     BANK_USER,
     URL_BANK_CUENTAS,
     URL_BANK_MAIN,
 )
 from discobolo.scripts.extra_functions import clean_download_folder
+from shutil import which
 
 # Normalize to absolute path
-BANK_DOWNLOAD_PATH = os.path.abspath(BANK_DOWNLOAD_PATH)
-# print("TMP dir is:", Path(BANK_DOWNLOAD_PATH).resolve())
-# print("TMP contents (pre-download):", [p.name for p in Path(BANK_DOWNLOAD_PATH).iterdir()])
+BANK_PATH = os.path.abspath(BANK_PATH)
+# BANK_PATH = '/temp/'
+
+
+def wait_for_downloads(dir_path, before=None, timeout=60):
+    """
+    Wait until Chrome finishes at least one NEW download in dir_path.
+    - `before`: set of filenames present BEFORE triggering the download.
+                If None, it will be computed on first call (less strict).
+    Returns: str path to the new finished file, or None on timeout.
+    """
+    dirp = Path(dir_path)
+    dirp.mkdir(parents=True, exist_ok=True)
+
+    if before is None:
+        before = {p.name for p in dirp.iterdir() if p.is_file()}
+
+    end = time.time() + timeout
+    while time.time() < end:
+        # ignore temp/partial files
+        candidates = [
+            p for p in dirp.iterdir()
+            if p.is_file()
+            and p.suffix not in {".crdownload", ".tmp", ".part"}
+            and p.name not in before
+        ]
+        if candidates:
+            # settle check: size must stop changing
+            p = max(candidates, key=lambda x: x.stat().st_mtime)
+            s1 = p.stat().st_size
+            time.sleep(0.5)
+            s2 = p.stat().st_size
+            if s1 == s2 and s2 > 0:
+                return str(p)
+        time.sleep(0.25)
+    return None
 
 def wait_for_new_file(dir_path, before, suffixes=(".xlsx", ".csv", ".pdf"), timeout=60):
-    print("  ⌚ Waiting for file to appear...")
+    from pathlib import Path
+    import time
     dirp = Path(dir_path)
     dirp.mkdir(parents=True, exist_ok=True)
     end = time.time() + timeout
@@ -83,6 +115,7 @@ def multiple_users(driver):
             print("✅ Clicked alternative 'Continuar' button.")
         except Exception:
             print("❌ No se pudo hacer click en ningún botón 'Continuar'.")
+
 
 def close_modal_if_present(driver, timeout=6):
     # IDs & typical selectors
@@ -164,6 +197,7 @@ def close_modal_if_present(driver, timeout=6):
 
         time.sleep(0.2)
 
+
 def wait_modal_gone(driver, timeout=6):
     try:
         WebDriverWait(driver, timeout).until(
@@ -173,6 +207,7 @@ def wait_modal_gone(driver, timeout=6):
         )
     except Exception:
         pass
+
 
 def click_with_fallback(driver, xpath_list, timeout=15, name="elemento"):
     for xpath in xpath_list:
@@ -194,6 +229,7 @@ def click_with_fallback(driver, xpath_list, timeout=15, name="elemento"):
             )
     print(f"❌ Coulnd't be clicked on '{name}' with any xpath.")
     return False
+
 
 def ver_mas_movimientos(driver):
     try:
@@ -221,10 +257,11 @@ def ver_mas_movimientos(driver):
     except Exception as e:
         print(f"❌ Error clicking 'Ver más movimientos': {e}")
 
+
 def run_transfers_download():
     # Ensure download dir and start clean
-    os.makedirs(BANK_DOWNLOAD_PATH, exist_ok=True)
-    clean_download_folder(BANK_DOWNLOAD_PATH)
+    os.makedirs(BANK_PATH, exist_ok=True)
+    clean_download_folder(BANK_PATH)
 
     # kill leftovers
     os.system("pkill -f chromedriver >/dev/null 2>&1 || true")
@@ -237,14 +274,12 @@ def run_transfers_download():
 
     # Build Chrome options
     chrome_options = webdriver.ChromeOptions()
-    chrome_options.page_load_strategy = "eager"
     prefs = {
-        "download.default_directory": BANK_DOWNLOAD_PATH,
+        "download.default_directory": BANK_PATH,
         "download.prompt_for_download": False,
         "download.directory_upgrade": True,
         "plugins.always_open_pdf_externally": True,
         "profile.default_content_setting_values.automatic_downloads": 1,
-        "profile.default_content_setting_values.geolocation": 2, # 🚫 block location prompts
         "profile.default_content_settings.popups": 0,
         "safebrowsing.enabled": True,
         "profile.default_content_setting_values.notifications": 2,
@@ -254,39 +289,40 @@ def run_transfers_download():
 
     # Headless-safe flags
     chrome_options.add_argument("--headless=new")
-    # chrome_options.add_argument("--window-size=1366,900")
-    chrome_options.add_argument("--window-size=1920,1080")
-
-    # Stable flags for WSL/containers
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    chrome_options.add_argument("--disable-extensions")
     chrome_options.add_argument("--disable-popup-blocking")
-    chrome_options.add_argument("--disable-features=BlockInsecureDownloads")
+    chrome_options.add_argument("--window-size=1920,1080")
+    # chrome_options.add_argument("--window-size=1366,900")
     chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--enable-logging")
     chrome_options.add_argument("--remote-debugging-pipe")
+    chrome_options.add_argument("--disable-popup-blocking")
+    chrome_options.add_argument("--disable-extensions")
+    chrome_options.add_argument("--v=1")
+    chrome_options.add_argument("--disable-features=BlockInsecureDownloads")
 
+    # Prefer system Chrome/Chromium if present
+    binary = which("google-chrome") or which("chromium-browser") or which("chromium")
+    if binary:
+        chrome_options.binary_location = binary
 
     driver = None
     try:
         driver = webdriver.Chrome(options=chrome_options)
 
-        try:
-            driver.execute_cdp_cmd(
-                "Browser.setDownloadBehavior",
-                {"behavior": "allow", "downloadPath": BANK_DOWNLOAD_PATH, "eventsEnabled": True}
-            )
-            print(f"Browser.setDownloadBehavior set to ->", BANK_DOWNLOAD_PATH)
-        except Exception as e:
-            print(f"Browser.setDownloadBehavior failed: {e}")
-            try:
-                driver.execute_cdp_cmd(
-                    "Page.setDownloadBehavior",
-                    {"behavior": "allow", "downloadPath": BANK_DOWNLOAD_PATH, }
-                )
-                print(f"Page.setDownloadBehavior set to -> ", BANK_DOWNLOAD_PATH)
-            except Exception as e2:
-                print(f"Page.setDownloadBehavior failed: {e}")
+        # Allow downloads
+        # try:
+        #     # New CDP
+        #     driver.execute_cdp_cmd(
+        #         "Browser.setDownloadBehavior", {"behavior": "allow", "downloadPath": BANK_PATH}
+        #     )
+        # except Exception:
+        #     # Old build
+        #     driver.execute_cdp_cmd(
+        #         "Page.setDownloadBehavior",
+        #         {"behavior": "allow", "downloadPath": BANK_PATH}
+        #     )
 
         print("   ▶️ Entering bank page.")
         driver.get(URL_BANK_MAIN)
@@ -317,9 +353,11 @@ def run_transfers_download():
         except Exception:
             print("   ❌ Error login in.")
 
-        # If there are multiple users -> multiple_users(driver)
+        # If there are multiple users
+        # multiple_users(driver)
 
-        time.sleep(5)
+        # driver.get(URL_BANK_CUENTAS)
+        time.sleep(2)
     
         # Closing modal if there is one
         close_modal_if_present(driver)
@@ -330,28 +368,28 @@ def run_transfers_download():
         try:
             cuentas_btn = WebDriverWait(driver, 10).until(
                 EC.element_to_be_clickable(
-                    (By.XPATH, "//button[.//p[text()='Ver Cuentas']]")
+                    (By.CSS_SELECTOR, "button.btn-primary.btn.focusMouse")
                 )
             )
             cuentas_btn.click()
             print("  ✅ Btn 'Cuentas' successfully clicked.")
         except Exception:
-            print("   ❌ Error clicking on 'Cuentas' -> trying another approach🔁")
+            print("Error clicking on 'Cuentas'")
             try:
                 cuentas_btn = WebDriverWait(driver, 10).until(
                     EC.element_to_be_clickable(
-                        (By.CSS_SELECTOR, "button.btn-primary.btn.focusMouse")
+                        (By.XPATH, "//button[.//p[text()='Ver Cuentas']]")
                     )
                 )
                 cuentas_btn.click()
                 print("  ✅Second try successful - button 'Cuentas' clicked.")
             except Exception:
-                print("  ❌ 2do try - Error clicking on 'Cuentas'.")
-                print("   ➡️ Trying 3rd option -> directly to 'Cuentas' url.")
+                print("2do try - Error clicking on 'Cuentas'.")
                 driver.get(URL_BANK_CUENTAS)
         time.sleep(2)
 
         # Btn 'Movimientos'
+        # Closing modal if there is one
         close_modal_if_present(driver)
         wait_modal_gone(driver)
 
@@ -364,7 +402,6 @@ def run_transfers_download():
             ],
             name="Botón 'Movimientos'",
         )
-
         close_modal_if_present(driver)
         wait_modal_gone(driver)
 
@@ -376,54 +413,144 @@ def run_transfers_download():
 
         time.sleep(2)
 
-        try:
-            driver.execute_cdp_cmd(
-                "Browser.setDownloadBehavior",
-                {"behavior": "allow", "downloadPath": BANK_DOWNLOAD_PATH, "eventsEnabled": True}
-            )
-        except Exception:
-            pass
+        prev = driver.window_handles[:]
 
         # Download button
-        before = {p.name for p in Path(BANK_DOWNLOAD_PATH).iterdir() if p.is_file()}
+        before = {p.name for p in Path(BANK_PATH).iterdir() if p.is_file()}
+        clicked = click_with_fallback(
+            driver,
+            [
+                "//*[@id='cuentasMovimientosContext']//button[contains(@class,'btn-icon-primary')]",
+                "//button[contains(., 'Descargar')]",
+                "//button[contains(., 'Exportar')]",
+                "//button[@aria-label[contains(., 'Descargar')]]",
+                "//button[.//i[contains(@class, 'download') or contains(@class, 'bi-download')]]",
+            ],
+            name="Btn 'Descargar/Exportar'",
+        )
+        if not clicked:
+            raise RuntimeError("Btn 'descargar' couldn't be clicked.")
+        
+
+        # Wait for the menu/dropdown to appear (be permissive with selectors)
+        try:
+            WebDriverWait(driver, 8).until(
+                EC.any_of(
+                    EC.visibility_of_element_located((By.XPATH, "//div[contains(@class,'dropdown') and (.//a or .//button or .//li)]")),
+                    EC.visibility_of_element_located((By.XPATH, "//ul[contains(@class,'dropdown') or contains(@class,'menu')]")),
+                    EC.visibility_of_element_located((By.XPATH, "//div[contains(@class,'menu') and (.//a or .//button or .//li)]")),
+                )
+            )
+        except TimeoutException:
+            # Some UIs open a popover with fixed container; we’ll try clicking Excel directly anyway.
+            pass
+
+        # Click the Excel/XLSX option explicitly
         clicked_excel = click_with_fallback(
             driver,
             [
-                # 1) Exact ARIA label (best)
-                "//button[@aria-label='Descargar excel' and not(@aria-disabled='true')]",
-                # 2) By the <p id="excel-title">Excel</p> child
-                "//p[@id='excel-title' and normalize-space()='Excel']/ancestor::button[1][not(@aria-disabled='true')]",
-                # 3) Via the Excel SVG icon
-                "//*[@data-testid='excel-icon']/ancestor::button[1][not(@aria-disabled='true')]",
-                # 4) By class + visible text
-                "//button[contains(@class,'btn-icon-primary') and .//p[normalize-space()='Excel'] and not(@aria-disabled='true')]",
-                # 5) Case-insensitive fallback on aria-label
-                "//button[contains(translate(@aria-label,'EXCEL','excel'),'excel') and not(@aria-disabled='true')]",
+                "//a[contains(., 'Excel')]",
+                "//button[contains(., 'Excel')]",
+                "//li[contains(., 'Excel')]",
+                "//a[contains(., 'XLSX')]",
+                "//button[contains(., 'XLSX')]",
+                "//li[contains(., 'XLSX')]",
             ],
-            name="Excel Btn",
+            name="Opción 'Excel/XLSX'",
         )
+
         if not clicked_excel:
-            raise RuntimeError("'Excel option couldn't be clicked.'")
+            raise RuntimeError("Btn 'descargar' clicked_excel couldn't be clicked.")
 
-        # Checking download
-        new_file = wait_for_new_file(BANK_DOWNLOAD_PATH, before=before, suffixes=(".xlsx", ".xls"), timeout=90)
-        print("TMP contents (post-download):", [p.name for p in Path(BANK_DOWNLOAD_PATH).iterdir()])
+        # If there truly is no menu and the icon immediately downloads, that's fine:
+        # clicked_excel can be False; we'll still wait for the file.
 
-        # fallback if /tmp is empty
+        # Now wait for the new file (strict .xlsx like you prefer)
+
+        print("ℹ️ Waiting for file to appear in:", BANK_PATH)
+
+        try:
+            WebDriverWait(driver, 6).until(lambda d: len(d.window_handles) > len(prev))
+            if len(driver.window_handles) > len(prev):
+                driver.switch_to.window(driver.window_handles[-1])
+                print("🔀 Switched to new download tab")
+                # Re-allow downloads on the active tab (harmless if redundant)
+                try:
+                    driver.execute_cdp_cmd("Browser.setDownloadBehavior",
+                        {"behavior": "allow", "downloadPath": BANK_PATH, "eventsEnabled": True})
+                except Exception:
+                    driver.execute_cdp_cmd("Page.setDownloadBehavior",
+                        {"behavior": "allow", "downloadPath": BANK_PATH, "eventsEnabled": True})
+        except Exception:
+            pass
+        # 3 Click
+        try:
+            # If it appears...
+            WebDriverWait(driver, 8).until(
+                EC.visibility_of_element_located((By.ID, "globalLoading"))
+            )
+            # ...wait until it disappears
+            WebDriverWait(driver, 120).until(
+                EC.invisibility_of_element_located((By.ID, "globalLoading"))
+            )
+        except TimeoutException:
+            # Spinner might be too fast or not used — that's fine
+            pass
+
+        # Some banks show the final button inside a modal/toast
+        close_modal_if_present(driver)  # clear blocking overlays if any
+
+        # Click the final "Descargar archivo" / "Descargar Excel" control
+        clicked_final = click_with_fallback(
+            driver,
+            [
+                # Very specific text first
+                "//button[contains(., 'Descargar archivo') and not(@disabled) and not(@aria-disabled='true')]",
+                "//a[contains(., 'Descargar archivo')]",
+                "//div[contains(@class,'modal') or contains(@class,'toast')]//button[contains(., 'Descargar')]",
+                "//div[contains(@class,'modal') or contains(@class,'toast')]//a[contains(., 'Descargar')]",
+
+                # More generic fallbacks
+                "//button[contains(., 'Descargar') and contains(., 'Excel') and not(@disabled) and not(@aria-disabled='true')]",
+                "//a[contains(., 'Descargar') and (contains(., 'Excel') or contains(@href, '.xlsx') or starts-with(@href, 'blob:') or starts-with(@href, 'data:'))]",
+
+                # Any explicit download link inside a modal
+                "//div[contains(@class,'modal')]//a[@download]",
+            ],
+            name="Botón final 'Descargar archivo'",
+            timeout=12,
+        )
+
+        if not clicked_final:
+            raise RuntimeError("Btn 'descargar' clicked_final couldn't be clicked.")
+
+
+        # new_file = wait_for_downloads(BANK_PATH, before=before, timeout=60)
+        new_file = wait_for_new_file(
+            BANK_PATH, 
+            before=before, 
+            suffixes=(".xlsx", ".xls", ".csv", ".pdf"), 
+            timeout=60
+            )
         if not new_file:
-            home_dl = str(Path.home() / "Downloads")
-            new_file = wait_for_new_file(home_dl, before=set(), suffixes=(".xlsx", ".xls"), timeout=10)
-            if new_file:
-                print("ℹ️ Found file in system Downloads:", new_file)
-            # try hidden <a download> as last resort
+            # Bonus: sometimes a hidden <a download> is present — try triggering any
             for a in driver.find_elements(By.XPATH, "//a[@download]"):
                 try:
                     driver.execute_script("arguments[0].click();", a)
                 except Exception:
                     pass
-            new_file = wait_for_new_file(BANK_DOWNLOAD_PATH, before=before, suffixes=(".xlsx", ".xls"), timeout=30)
+            new_file = wait_for_new_file(BANK_PATH, before=before, suffixes=(".xlsx",), timeout=20)
 
+        if not new_file:
+            debug = [p.name for p in Path(BANK_PATH).iterdir()]
+            raise TimeoutError(f"Download timeout. Folder now has: {debug}")
+        
         print("✅ Downloaded:", new_file)
+
+        # if wait_for_downloads(BANK_PATH, timeout=90):
+        #     print("  ✅ Download completed")
+        # else:
+        #     print("  ❌ Download timeout (check selectors / permissions)")
 
     except Exception as e:
         print(f"Error during automation: {e}")
