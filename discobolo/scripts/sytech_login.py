@@ -7,52 +7,48 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
 
-def create_driver(download_dir):
+def sytech_login(url, username, password, download_dir):
     download_dir = os.path.abspath(download_dir)
     os.makedirs(download_dir, exist_ok=True)
-
-    opts = webdriver.ChromeOptions()
+    chrome_options = webdriver.ChromeOptions()
     prefs = {
         "download.default_directory": download_dir,
         "download.prompt_for_download": False,
         "download.directory_upgrade": True,
         "safebrowsing.enabled": True,
-        "profile.default_content_setting_values.automatic_downloads": 1,
     }
-    opts.add_experimental_option("prefs", prefs)
-    # if headless:
-    opts.add_argument("--headless=new")
-    opts.add_argument("--window-size=1920,1080")
-    opts.add_argument("--no-sandbox")
-    opts.add_argument("--disable-dev-shm-usage")
-    opts.add_argument("--disable-extensions")
-    opts.add_argument("--disable-popup-blocking")
-    opts.add_argument("--disable-features=BlockInsecureDownloads")
-    opts.add_argument("--disable-gpu")
-    opts.add_argument("--remote-debugging-pipe")
+    chrome_options.add_experimental_option("prefs", prefs)
+    chrome_options.add_argument("--headless=new")
+    chrome_options.add_argument("--window-size=1920,1080")
+    chrome_options.add_argument("--disable-gpu")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--disable-extensions")
+    chrome_options.add_argument("--disable-popups-blocking")
+    chrome_options.add_argument("--remote-debugging-pipe")
 
+    driver = webdriver.Chrome(options=chrome_options)
 
-    return webdriver.Chrome(options=opts)
-
-
-def sytech_login(driver, url, username, password):
-    
-    driver.get(url)
-
-    # If logged in
-    wait = WebDriverWait(driver, 20)
-
-    wait.until(EC.any_of(
-        EC.presence_of_element_located((By.ID, "user_name")),   # login form present
-        EC.presence_of_element_located((By.ID, "rhMenuBar")),   # already logged in
-    ))
-
-    # already logged in → nothing to do
-    if driver.find_elements(By.ID, "rhMenuBar"):
-        return
-
+    try:
+        driver.execute_cdp_cmd(
+            "Browser.setDownloadBehavior",
+            {
+                "behavior": "allow",
+                "downloadPath": download_dir,
+            },
+        )
+    except Exception:
+        driver.execute_cdp_cmd(
+            "Page.setDownloadBehavior",
+            {
+                "behavior": "allow",
+                "downloadPath": download_dir,  # ✅ Force Chrome to use the right folder
+            },
+        )
 
     # Open Sytech
+    driver.get(url)
+
     try:
         username_input = driver.find_element(By.ID, "user_name")
         password_input = driver.find_element(By.ID, "user_password")
@@ -65,9 +61,8 @@ def sytech_login(driver, url, username, password):
         password_input.send_keys(password)
         login_button.click()
     except Exception as e:
-        # driver.quit()
+        driver.quit()
         print(f" ❌ Login error: {e}")
-        raise
 
     # Close extra tabs
     original_window = driver.current_window_handle
@@ -78,5 +73,4 @@ def sytech_login(driver, url, username, password):
             driver.switch_to.window(handle)
             driver.close()
     driver.switch_to.window(original_window)
-    # print("📂 Chrome download dir:", download_dir)
     return driver
