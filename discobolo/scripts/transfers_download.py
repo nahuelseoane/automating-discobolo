@@ -1,18 +1,9 @@
 import os
-import shutil
-import tempfile
 import time
-import glob
+from pathlib import Path
 
 from selenium import webdriver
-from selenium.common.exceptions import (
-    ElementClickInterceptedException,
-    ElementNotInteractableException,
-    NoSuchElementException,
-    StaleElementReferenceException,
-    TimeoutException,
-)
-from selenium.webdriver.common.action_chains import ActionChains
+from selenium.common.exceptions import (NoSuchElementException,TimeoutException,)
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
@@ -31,7 +22,7 @@ from shutil import which
 BANK_PATH = os.path.abspath(BANK_PATH)
 
 
-def wait_for_downloads(dir_path, timeout=60):
+def wait_for_downloads(dir_path, before, timeout=60):
     """
     Wait until Chrome finishes at least one NEW download in dir_path.
     - `before`: set of filenames present BEFORE triggering the download.
@@ -63,21 +54,8 @@ def wait_for_downloads(dir_path, timeout=60):
                 return str(p)
         time.sleep(0.25)
     return None
-    # """
-    # Wait until Chrome has no *.crdownload files and a real file.
-    # """
-    # end = time.time() + timeout
-    # while time.time() < end:
-    #     if not glob.glob(os.path.join(dir_path, "*.crdownload")):
-    #         files = [f for f in os.listdir(dir_path) if not f.endswith(".tmp")]
-    #         if files:
-    #             return True
-    #     time.sleep(0.5)
-    # return False
 
 def wait_for_new_file(dir_path, before, suffixes=(".xlsx", ".csv", ".pdf"), timeout=60):
-    from pathlib import Path
-    import time
     dirp = Path(dir_path)
     dirp.mkdir(parents=True, exist_ok=True)
     end = time.time() + timeout
@@ -447,7 +425,7 @@ def run_transfers_download():
         new_file = wait_for_downloads(BANK_PATH, before=before, timeout=60)
         # new_file = wait_for_new_file(BANK_PATH, before=None, suffixes=".xlsx", timeout=60)
         if not new_file:
-            debug = [p.name for p in Path(Bank_Path).iterdir()]
+            debug = [p.name for p in Path(BANK_PATH).iterdir()]
             raise TimeoutError("Download timeout (no new finished file detected).")
         print("✅ Downloaded:", new_file)
 
